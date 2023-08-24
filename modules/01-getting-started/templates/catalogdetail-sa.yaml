@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: catalogdetail-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    account: catalogdetail

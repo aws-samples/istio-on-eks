@@ -1,0 +1,5 @@
+apiVersion: v1
+appVersion: "1.0"
+description: Helm Chart for Istio basic usecase
+name: istio_basic_workshop
+version: 1.0.0

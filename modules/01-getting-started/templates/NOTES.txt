@@ -1,0 +1,9 @@
+
+1. Get the application URL by running the following command:
+
+   ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+   echo "http://$ISTIO_INGRESS_URL"
+
+2. Access the displayed URL in a terminal using cURL or via a browser window
+
+Note: It may take a few minutes for the istio-ingress Network LoadBalancer to associate to the instance-mode targetGroup after the application is deployed.

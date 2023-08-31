@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogdetail2
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogdetail
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: catalogdetail
+        version: v2
+    spec:
+      serviceAccountName: catalogdetail-sa
+      containers:
+        - name: catalogdetail
+          image: "{{ .Values.catalogdetail2.image.repository }}:{{ .Values.catalogdetail2.image.tag }}"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            successThreshold: 3
+          ports:
+            - containerPort: 3000

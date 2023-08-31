@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  #annotations:
+  # This annotation is only required if you are creating an internal facing ELB. Remove this annotation to create public facing ELB.
+  #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  name: catalogdetail
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: catalogdetail
+spec:
+  ports:
+    - name: "http"
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: catalogdetail

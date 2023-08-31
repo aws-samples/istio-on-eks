@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      version: v1
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/stats/prometheus'
+      labels:
+        app: frontend
+        version: v1
+    spec:
+      serviceAccountName: frontend-sa
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 9000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 9000
+            successThreshold: 3
+          env:
+            {{ .Values.frontend.env | toYaml | nindent 12 }}
+          ports:
+            - containerPort: 9000

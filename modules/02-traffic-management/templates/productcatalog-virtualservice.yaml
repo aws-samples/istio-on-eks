@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: productcatalog
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+  - productcatalog
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: productcatalog
+        port:
+          number: 5000

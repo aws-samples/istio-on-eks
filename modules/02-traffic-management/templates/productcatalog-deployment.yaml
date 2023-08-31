@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalog
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productcatalog
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: productcatalog
+        version: v1
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      serviceAccountName: productcatalog-sa
+      containers:
+        - name: productcatalog
+          image: "{{ .Values.productcatalog.image.repository }}:{{ .Values.productcatalog.image.tag }}"          
+          imagePullPolicy: Always
+          env:
+            {{ .Values.productcatalog.env | toYaml | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            successThreshold: 3
+          ports:
+            - containerPort: 5000

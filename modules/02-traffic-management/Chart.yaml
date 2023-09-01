@@ -1,5 +1,0 @@
-apiVersion: v1
-appVersion: "1.1"
-description: Helm Chart for Istio traffic management usecases
-name: istio_traffic_management_workshop
-version: 1.1.0

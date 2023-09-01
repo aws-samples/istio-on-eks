@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: productcatalog-envoyfilter
+  name: productcatalog
   namespace: workshop
 spec:
   workloadSelector:
@@ -23,13 +23,14 @@ spec:
         name: envoy.filters.http.lua
         typed_config:
           "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
-          inlineCode: |-
-            function envoy_on_request(request_handle)
-                math.randomseed(os.clock()*100000000000);
-                local r = math.random(1, 100);
-                if r > 50 then
-                request_handle:headers():add("USER-TYPE", "external");
-                else
-                request_handle:headers():add("USER-TYPE", "internal");
-                end
-            end
+          defaultSourceCode:
+            inlineString: |-
+              function envoy_on_request(request_handle)
+                  math.randomseed(os.clock()*100000000000);
+                  local r = math.random(1, 100);
+                  if r <= 30 then
+                  request_handle:headers():add("USER-TYPE", "internal");
+                  else
+                  request_handle:headers():add("USER-TYPE", "external");
+                  end
+              end

@@ -165,3 +165,9 @@ below:
 The traffic distribution for `catalogdetail` shows 100% of requests are routed to `v2` version.
 
 ### Destroy
+
+Revert the change to the environment variable.
+
+```bash
+kubectl set env deployment/productcatalog -n workshop AGG_APP_URL=http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+```

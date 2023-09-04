@@ -120,7 +120,8 @@ command in a separate terminal session.
 ```sh 
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
-siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
+ISTIO_INGRESS_URL=http://$(kubectl get service/istio-ingress -n istio-system -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+siege $ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
 ```
 
 While the load is being generated access the `kiali` console you previously 

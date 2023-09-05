@@ -24,7 +24,7 @@ subset configuration thereby leading to a uniform traffic spread across both sub
 cd ../02-traffic-management
 
 # Install the mesh resources
-kubectl apply -f './setup-mesh-resources/*.yaml'
+kubectl apply -f ./setup-mesh-resources/
 ```
 
 Output should be similar to:
@@ -444,7 +444,7 @@ applied on [`productcatalog`](./shift-traffic-v2-header/productcatalog-envoyfilt
 ```bash
 # Update route to add a match on user-type header
 # and install a filter to set the header
-kubectl apply -f './shift-traffic-v2-header/*.yaml'
+kubectl apply -f ./shift-traffic-v2-header/
 ```
 
 Output should be similar to:

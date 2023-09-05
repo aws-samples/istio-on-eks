@@ -71,11 +71,13 @@ nodes.
 
 #### Generating Traffic
 
-Use the `siege` command line tool, generate traffic to the HTTP endpoint 
-`http://$ISTIO_INGRESS_URL` noted above in the deployment output by running the following
-command in a separate terminal session.
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
 
-```sh 
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
@@ -147,11 +149,13 @@ Events:            <none>
 
 #### Generating Traffic
 
-Use the `siege` command line tool, generate traffic to the HTTP endpoint 
-`http://$ISTIO_INGRESS_URL` noted above in the deployment output by running the following
-command in a separate terminal session.
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
 
-```sh 
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
@@ -236,11 +240,13 @@ Events:            <none>
 
 #### Generating Traffic
 
-Use the `siege` command line tool, generate traffic to the HTTP endpoint 
-`http://$ISTIO_INGRESS_URL` noted above in the deployment output by running the following
-command in a separate terminal session.
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
 
-```sh 
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
@@ -405,11 +411,13 @@ Events:            <none>
 
 #### Generating Traffic
 
-Use the `siege` command line tool, generate traffic to the HTTP endpoint 
-`http://$ISTIO_INGRESS_URL` noted above in the deployment output by running the following
-command in a separate terminal session.
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
 
-```sh 
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
@@ -553,11 +561,13 @@ Events:     <none>
 
 #### Generating Traffic
 
-Use the `siege` command line tool, generate traffic to the HTTP endpoint 
-`http://$ISTIO_INGRESS_URL` noted above in the deployment output by running the following
-command in a separate terminal session.
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
 
-```sh 
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M

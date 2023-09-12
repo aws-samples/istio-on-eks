@@ -1,1 +1,5 @@
 .DS_STORE
+node_modules
+.python-version
+venv
+__pycache__

@@ -65,7 +65,7 @@ Access the `kiali` console you previously configured in
 that the `frontend`, `productcatalog` and `catalogdetail` services now show up as `VirtualService` 
 nodes.
 
-![Setup](../../static/images/02-traffic-management/setup-mesh-resources/setup.png)
+![Setup](../../images/02-setup-mesh-resources.png)
 
 ### Test
 
@@ -87,7 +87,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![Traffic distribution](../../static/images/02-traffic-management/setup-mesh-resources/traffic-distribution.png)
+![Traffic distribution](../../images/02-initial-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows almost even (50%) split between
 both `v1` and `v2` versions like before.
@@ -165,7 +165,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![Traffic distribution](../../static/images/02-traffic-management/default-route-v1/traffic-distribution.png)
+![Traffic distribution](../../images/02-default-route-v1-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows all traffic is now routed
 to only `v1` version.
@@ -256,7 +256,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![Traffic distribution](../../static/images/02-traffic-management/shift-traffic-v2-weight/traffic-distribution.png)
+![Traffic distribution](../../images/02-shift-traffic-v2-weight-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows almost 87% is randomly routed to `v1` version and only 13% is routed to `v2` version.
 
@@ -427,7 +427,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![Traffic distribution](../../static/images/02-traffic-management/shift-traffic-v2-path/traffic-distribution.png)
+![Traffic distribution](../../images/02-shift-traffic-v2-path-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows 100% of requests are routed to `v2` version.
 
@@ -577,7 +577,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![Traffic distribution](../../static/images/02-traffic-management/shift-traffic-v2-header/traffic-distribution.png)
+![Traffic distribution](../../images/02-shift-traffic-v2-header-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows almost 70% is routed to `v1` version and approximately 30% is routed to `v2` version.
 

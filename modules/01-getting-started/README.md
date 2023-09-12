@@ -120,7 +120,7 @@ command in a separate terminal session.
 ```sh 
 # Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
 # between successive requests
-ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-system -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
 siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
 ```
 

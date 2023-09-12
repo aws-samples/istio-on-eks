@@ -109,7 +109,7 @@ Use your browser to navigate to `http://localhost:20001`. At the `kiali` console
 carefully observe the highlighted portions of the image below and replicate that 
 in your environment.
 
-![](../../.images/01-kiali-console.png)
+![](../../images/01-kiali-console.png)
 
 ### Generating Traffic
 
@@ -128,7 +128,7 @@ While the load is being generated access the `kiali` console you previously
 configured and you should notice the traffic to be flowing in the manner shown
 below:
 
-![](../../.images/01-kiali-traffic-flow.gif)
+![](../../images/01-kiali-traffic-flow.gif)
 
 Based on animation shown we conclude that:
 1. The Ingress traffic directed towards the `istio-ingress` is captured by the 

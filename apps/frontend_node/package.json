@@ -10,15 +10,15 @@
   "author": "Praseeda Sathaye",
   "license": "MIT-0",
   "dependencies": {
-    "aws-xray-sdk": "3.2.0",
-    "axios": "^0.21.1",
+    "aws-xray-sdk": "^3.5.1",
+    "axios": "^0.21.4",
     "aws-sdk": "^2.657.0",
-    "body-parser": "^1.19.0",
-    "ejs": "^3.1.5",
-    "express": "^4.17.1",
+    "body-parser": "^1.20.2",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
     "prom-client": "^12.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7"
+    "nodemon": "^3.0.1"
   }
 }

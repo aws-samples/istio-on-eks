@@ -6,7 +6,7 @@ EKS
 ## Prerequisites:
 
 To be able to work on this module you should have an EKS cluster with Istio 
-deployed. Please see this [example](https://github.com/aws-ia/terraform-aws-eks-blueprints/tree/main/examples/istio) for how to set one up with [EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints).
+deployed. Please see this [example](https://github.com/aws-ia/terraform-aws-eks-blueprints/tree/main/patterns/istio) for how to set one up with [EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints).
 
 Also, ensure that you have the following tools installed locally:
 

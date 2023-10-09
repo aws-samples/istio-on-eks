@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: catalogdetai
+spec:
+  host: catalogdetail
+  subsets:
+    - name: catalogdetail
+      labels:
+        version: v1
+    - name: catalogdetail2
+      labels:
+        version: v2

@@ -18,6 +18,8 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 
 ### [1. Getting Started](modules/01-getting-started/README.md)
 ### [2. Traffic Management](modules/02-traffic-management/README.md)
+### [3. Rate Limiting](modules/03-rate-limiting/README.md)
+### [4. Fault Injection](modules/04-fault-injection/README.md)
 
 ## 🔐 Security
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

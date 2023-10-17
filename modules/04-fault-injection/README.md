@@ -1,4 +1,4 @@
-# Module 4 - Faull Injection
+# Module 4 - Fault Injection
 
 This module shows the fault injection capabilities of Istio service-mesh on Amazon EKS. 
 
@@ -38,13 +38,13 @@ destinationrule.networking.istio.io/catalogdetail configured
 
 ### Simulating Latency : HTTP Delay Fault Injection
 
-Create a fault injection rule to delay traffic coming from the test user `jason`.
+Create a fault injection rule to delay traffic coming to catalogdetail service v1
 
 ```
 kubectl apply -f virtual-service-catalogdetail-test-delay.yaml 
 ```
 
-The contents of the file are as follows::
+The contents of the file are as follows:
 
 ```
 apiVersion: networking.istio.io/v1alpha3
@@ -67,7 +67,6 @@ spec:
 ```
 
 >The `fault` field in a VirtualService configuration is used to inject faults into the traffic that is routed to the service. The `delay` fault injects a delay into the traffic before it is forwarded to the service. The delay can be specified as a fixed amount of time or as a percentage of requests. The `percentage` value in the configuration provided indicates that the delay will be applied to 100% of requests to the `catalogdetail` service. The `fixedDelay` value of 600s indicates that the delay will be 600 seconds.
-
 
 Expected Output:
 
@@ -162,7 +161,6 @@ spec:
 * With the abort configuration in place, as illustrated below you should see the Catalog Detail toggling resulting in `Vendors: ABC.com, XYZ.com`. This is because the `catalogdetail` service has two versions `v1 (ABC.com)` and `v2(ABC.com, XYZ.com.)` and the abort in in `catalogdetail-v1` has resulted in routing the requests to `catalogdetail-v2`
 
 ![Application Snapshot](../../images/04-fault-injection-app-snapshot.png)
-
 
 ## Cleanup 
 

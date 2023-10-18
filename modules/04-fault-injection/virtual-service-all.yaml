@@ -2,6 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: frontend
+  namespace: workshop
 spec:
   hosts:
   - frontend
@@ -15,6 +16,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: productcatalog
+  namespace: workshop
 spec:
   hosts:
   - productcatalog
@@ -28,6 +30,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: catalogdetail
+  namespace: workshop
 spec:
   hosts:
   - catalogdetail
@@ -36,5 +39,9 @@ spec:
     - destination:
         host: catalogdetail
         subset: v1
+      weight: 50
+    - destination:
+        host: catalogdetail
         subset: v2
+      weight: 50
 ---     

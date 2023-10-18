@@ -2,6 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: catalogdetail
+  namespace: workshop
 spec:
   hosts:
   - catalogdetail
@@ -9,7 +10,7 @@ spec:
   - fault:
       abort:
         percentage:
-          value: 100
+          value: 50
         httpStatus: 500
     route:
     - destination:

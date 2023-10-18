@@ -80,7 +80,7 @@ metadata:
 spec:
   workloadSelector:
     labels:
-      app: prodcatalog
+      app: productcatalog
   configPatches:
     - applyTo: HTTP_FILTER
       match:
@@ -131,9 +131,9 @@ spec:
 To test the rate limiter in action, exec into another pod and send a bunch of requests to the prodcatalog service to trigger the rate limiter. 
 
 ```bash
-kubectl exec "$(kubectl get pod -l app=proddetail -o jsonpath='{.items[0].metadata.name}' -n workshop)" -c proddetail -n workshop --stdin --tty -- /bin/bash
+kubectl exec "$(kubectl get pod -l app=catalogdetail -o jsonpath='{.items[0].metadata.name}' -n workshop)" -c catalogdetail -n workshop --stdin --tty -- /bin/bash
  
-for i in {1..20}; do curl -I http://prodcatalog.workshop.svc.cluster.local:5000/products/; done
+for i in {1..20}; do curl -I http://productcatalog.workshop.svc.cluster.local:5000/products/; done
 ```
 
 Since the 20 requests are sent in less than a minute, after the first 10 requests are accepted by the service you’ll start seeing **HTTP 429** response codes from the service.

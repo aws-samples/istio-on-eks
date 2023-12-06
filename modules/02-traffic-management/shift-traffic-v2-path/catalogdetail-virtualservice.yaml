@@ -18,7 +18,12 @@ spec:
         port:
           number: 3000
         subset: v2
-  - route:
+  - match:
+    - uri:
+        exact: /v1/catalogDetail
+    rewrite:
+      uri: /catalogDetail
+    route:
     - destination:
         host: catalogdetail
         port:

@@ -398,6 +398,11 @@ Spec:
         Port:
           Number:  3000
         Subset:    v2
+    Match:
+      Uri:
+        Exact:  /v1/catalogDetail
+    Rewrite:
+      Uri:  /catalogDetail
     Route:
       Destination:
         Host:  catalogdetail
@@ -430,6 +435,37 @@ below:
 ![Traffic distribution](../../images/02-shift-traffic-v2-path-traffic-distribution.png)
 
 The traffic distribution for `catalogdetail` shows 100% of requests are routed to `v2` version.
+
+Now update the environment variable in `productcatalog` for `catalogdetail` service to test the path based route matching on `/v1/catalogDetail`.
+
+```bash
+# Switch service endpoint environment variable in productcatalog to point to v1.
+kubectl set env deployment/productcatalog -n workshop AGG_APP_URL=http://catalogdetail.workshop.svc.cluster.local:3000/v1/catalogDetail
+```
+
+Output should be similar to:
+```bash
+deployment.apps/productcatalog env updated
+```
+
+Use the `siege` command line tool, to generate traffic to the HTTP endpoint 
+`http://$ISTIO_INGRESS_URL` by running the following command in a separate terminal session.
+
+```sh
+# Get application ingress url
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
+# Generate load for 2 minute, with 5 concurrent threads and with a delay of 10s
+# between successive requests
+siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
+```
+
+While the load is being generated access the `kiali` console again and you should now notice the traffic to be flowing in the manner shown
+below:
+
+![Traffic distribution](../../images/02-shift-traffic-v1-path-traffic-distribution.png)
+
+The traffic distribution for `catalogdetail` shows 100% of requests are routed to `v1` version.
 
 ### Revert to initial state
 

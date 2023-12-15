@@ -5,15 +5,20 @@ EKS
 
 ## Prerequisites:
 
-To be able to work on this module you should have an EKS cluster with Istio 
-deployed. Please see this [example](https://github.com/aws-ia/terraform-aws-eks-blueprints/tree/main/patterns/istio) for how to set one up with [EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints).
+To be able to work on this module you should have an EKS cluster with Istio deployed by following below steps.
+1. You will need to clone the below repo.
+   ```sh
+   git clone https://github.com/aws-ia/terraform-aws-eks-blueprints.git
+   cd terraform-aws-eks-blueprints/patterns/istio 
+   ```
+2. Then follow the [Istio EKS Blueprint](https://aws-ia.github.io/terraform-aws-eks-blueprints/patterns/istio/#deploy) setup.
 
-Also, ensure that you have the following tools installed locally:
+3. Ensure that you have the following tools installed locally:
 
-1. [kubectl](https://Kubernetes.io/docs/tasks/tools/)
-2. [helm](https://helm.sh/docs/intro/install/)
-3. [jq](https://jqlang.github.io/jq/download/)
-4. [siege](https://github.com/JoeDog/siege)
+   1. [kubectl](https://Kubernetes.io/docs/tasks/tools/)
+   2. [helm](https://helm.sh/docs/intro/install/)
+   3. [jq](https://jqlang.github.io/jq/download/)
+   4. [siege](https://github.com/JoeDog/siege)
 
 ## Deploy 
 

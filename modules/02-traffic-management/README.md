@@ -610,7 +610,7 @@ The traffic distribution for `catalogdetail` shows almost 70% is routed to `v1` 
 
 ```bash
 # Delete EnvoyFilter
-kubectl delete -f ./shift-traffic-v2-header/productcatalog-envoyfilter.yaml
+kubectl delete -f ./header-based-routing/productcatalog-envoyfilter.yaml
 
 ```
 ## Traffic Mirroring

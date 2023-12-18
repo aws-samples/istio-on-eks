@@ -2,11 +2,15 @@
 
 This module shows the traffic routing capabilities of Istio service-mesh on Amazon EKS. The module is split into subdirectories for different traffic routing/shifting use cases.
 
+0. [Initial State setup](#initial-state-setup)
+1. [Route traffic to a specific app version](#routing-traffic-to-a-version-using-destination-rules)
+2. [Weight-based routing](#weight-based-routing)
+3. [Path-based routing](#path-based-routing)
+4. [Header-based routing](#header-based-routing)
+5. [Traffic Mirroring](#traffic-mirroring)
+
 ## Prerequisites:
 - [Module 1 - Getting Started](../01-getting-started/)
-
-Note: This module will build on the application resources deployed in 
-[Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
 
 ## Initial state setup
 
@@ -20,7 +24,7 @@ subset configuration thereby leading to a uniform traffic spread across both sub
 ### Deploy 
 
 ```bash
-# Change directory to the right folder
+# This assumes that you are currently in "istio-on-eks/modules/01-getting-started" folder
 cd ../02-traffic-management
 
 # Install the mesh resources
@@ -92,7 +96,7 @@ below:
 The traffic distribution for `catalogdetail` shows almost even (50%) split between
 both `v1` and `v2` versions like before.
 
-## Setup default route to v1
+## Routing Traffic to a version using Destination Rules
 
 In this step we setup default route for `catalogdetail` virtual service to 
 route all traffic to `v1` version.
@@ -101,7 +105,7 @@ route all traffic to `v1` version.
 
 ```bash
 # Update route to add subset: v1
-kubectl apply -f ./default-route-v1/catalogdetail-virtualservice.yaml
+kubectl apply -f ./route-traffic-to-version-v1/catalogdetail-virtualservice.yaml
 ```
 
 Output should be similar to:
@@ -113,7 +117,7 @@ virtualservice.networking.istio.io/catalogdetail configured
 
 #### Istio Resources
 
-Run the following command to describe the [`catalogdetail`](./default-route-v1/catalogdetail-virtualservice.yaml) `VirtualService`.
+Run the following command to describe the [`catalogdetail`](./route-traffic-to-version-v1/catalogdetail-virtualservice.yaml) `VirtualService`.
 
 ```bash
 kubectl describe VirtualService catalogdetail -n workshop
@@ -170,14 +174,8 @@ below:
 The traffic distribution for `catalogdetail` shows all traffic is now routed
 to only `v1` version.
 
-### Revert to initial state
 
-```bash
-# Revert catalogdetail
-kubectl apply -f ./setup-mesh-resources/catalogdetail-virtualservice.yaml
-```
-
-## Shift traffic to v2 based on weight
+## Weight Based Routing
 
 In this step we start shifting roughly 10% of traffic to `catalogdetail` virtual service to `v2` version.
 
@@ -185,7 +183,7 @@ In this step we start shifting roughly 10% of traffic to `catalogdetail` virtual
 
 ```bash
 # Update route to add 90% weight to subset: v1 and 10% weight to subset: v2
-kubectl apply -f ./shift-traffic-v2-weight/catalogdetail-virtualservice.yaml
+kubectl apply -f ./weight-based-routing/catalogdetail-virtualservice.yaml
 ```
 
 Output should be similar to:
@@ -197,7 +195,7 @@ virtualservice.networking.istio.io/catalogdetail configured
 
 #### Istio Resources
 
-Run the following command to describe the [`catalogdetail`](./shift-traffic-v2-weight/catalogdetail-virtualservice.yaml) `VirtualService`.
+Run the following command to describe the [`catalogdetail`](./weight-based-routing/catalogdetail-virtualservice.yaml) `VirtualService`.
 
 ```bash
 kubectl describe VirtualService catalogdetail -n workshop
@@ -260,14 +258,7 @@ below:
 
 The traffic distribution for `catalogdetail` shows almost 87% is randomly routed to `v1` version and only 13% is routed to `v2` version.
 
-### Revert to initial state
-
-```bash
-# Revert catalogdetail
-kubectl apply -f ./setup-mesh-resources/catalogdetail-virtualservice.yaml
-```
-
-## Shift traffic to v2 based on path
+## Path Based Routing
 
 In this step we shift traffic to `v2` version of the `catalogdetail` service based on request URI path. The `productcatalog` service uses `AGG_APP_URL` environment variable to lookup and invoke the `catalogdetail` service. The environment variable is updated from
 
@@ -281,7 +272,7 @@ to
 AGG_APP_URL=http://catalogdetail.workshop.svc.cluster.local:3000/v2/catalogDetail
 ```
 
-The [`catalogdetail`](./shift-traffic-v2-path/catalogdetail-virtualservice.yaml) `VirtualService` is updated with an exact
+The [`catalogdetail`](./path-based-routing/catalogdetail-virtualservice.yaml) `VirtualService` is updated with an exact
 URI path match on `/v2/catalogDetail` to route requests to `v2` subset. A URI rewrite rule reverts the
 path from `/v2/catalogDetail` back to `/catalogDetail` before forwarding the request to the destination
 pod.
@@ -290,7 +281,7 @@ pod.
 
 ```bash
 # Update route to send requests to /v2/catalogdetail to version v2.
-kubectl apply -f ./shift-traffic-v2-path/catalogdetail-virtualservice.yaml
+kubectl apply -f ./path-based-routing/catalogdetail-virtualservice.yaml
 ```
 
 Output should be similar to:
@@ -364,7 +355,7 @@ Events:
 
 #### Istio Resources
 
-Run the following command to describe the [`catalogdetail`](./shift-traffic-v2-path/catalogdetail-virtualservice.yaml) `VirtualService`. Verify that the URI match and rewrite settings for `v2` are updated.
+Run the following command to describe the [`catalogdetail`](./path-based-routing/catalogdetail-virtualservice.yaml) `VirtualService`. Verify that the URI match and rewrite settings for `v2` are updated.
 
 ```bash
 kubectl describe VirtualService catalogdetail -n workshop
@@ -473,11 +464,9 @@ The traffic distribution for `catalogdetail` shows 100% of requests are routed t
 # Revert env
 kubectl set env deployment/productcatalog -n workshop AGG_APP_URL=http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 
-# Revert catalogdetail
-kubectl apply -f ./setup-mesh-resources/catalogdetail-virtualservice.yaml
 ```
 
-## Shift traffic to v2 based on header
+## Header Based  Routing
 
 In this step we shift traffic to the `catalogdetail` service based on a `user-type` custom header.
 The header is set on the fly through an [`EnvoyFilter`](https://istio.io/latest/docs/reference/config/networking/envoy-filter/)
@@ -488,7 +477,7 @@ applied on [`productcatalog`](./shift-traffic-v2-header/productcatalog-envoyfilt
 ```bash
 # Update route to add a match on user-type header
 # and install a filter to set the header
-kubectl apply -f ./shift-traffic-v2-header/
+kubectl apply -f ./header-based-routing/
 ```
 
 Output should be similar to:
@@ -501,7 +490,7 @@ envoyfilter.networking.istio.io/productcatalog created
 
 #### Istio Resources
 
-Run the following command to describe the [`catalogdetail`](./shift-traffic-v2-header/catalogdetail-virtualservice.yaml) `VirtualService`.
+Run the following command to describe the [`catalogdetail`](./header-based-routing/catalogdetail-virtualservice.yaml) `VirtualService`.
 
 ```bash
 kubectl describe VirtualService catalogdetail -n workshop
@@ -543,7 +532,7 @@ Spec:
 Events:            <none>
 ```
 
-Run the following command to describe the [`productcatalog`](./shift-traffic-v2-header/productcatalog-envoyfilter.yaml) `EnvoyFilter`.
+Run the following command to describe the [`productcatalog`](./header-based-routing/productcatalog-envoyfilter.yaml) `EnvoyFilter`.
 ```bash
 kubectl describe EnvoyFilter productcatalog -n workshop
 ```
@@ -621,13 +610,26 @@ The traffic distribution for `catalogdetail` shows almost 70% is routed to `v1` 
 
 ```bash
 # Delete EnvoyFilter
-kubectl delete -f ./shift-traffic-v2-header/productcatalog-envoyfilter.yaml
+kubectl delete -f ./header-based-routing/productcatalog-envoyfilter.yaml
 
-# Revert catalogdetail
-kubectl apply -f ./setup-mesh-resources/catalogdetail-virtualservice.yaml
+```
+## Traffic Mirroring
+
+Let's configure the VirtualService to send the traffic to v1 and mirror 50% of the traffic to v2:
+
+```bash
+kubectl apply -f ./traffic-mirroring/catalogdetail-virtualservice.yaml
+
+
+# Describe the VirtualService
+kubectl describe VirtualService catalogdetail -n workshop
 ```
 
-## Destroy 
+Let's use siege again to generate traffic in a separate terminal session.
 
-Refer to [Destroy](../01-getting-started/README.md#destroy) section for
-cleanup of application resources.
+```bash
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+siege http://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M
+```
+
+Go to Kiali dashboard, you will see that the traffic is being routed to v1 and 50% of it is also being mirrored to v2 (the responses from v2 are discarded)

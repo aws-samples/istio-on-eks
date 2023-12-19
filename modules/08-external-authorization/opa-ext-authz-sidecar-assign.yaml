@@ -1,0 +1,82 @@
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: opa-istio
+spec:
+  applyTo:
+    - groups: [""]
+      kinds: ["Pod"]
+      versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+      - apiGroups: ["*"]
+        kinds: ["Pod"]
+    namespaceSelector:
+      matchLabels:
+        opa-istio-injection: enabled
+  location: "spec.containers[name:opa-istio]"
+  parameters:
+    pathTests:
+      - subPath: "spec.containers[name:opa-istio]"
+        condition: MustNotExist
+    assign:
+      value:
+        image: openpolicyagent/opa:latest-istio
+        name: opa-istio
+        args:
+          - run
+          - --server
+          - --addr=localhost:8181
+          - --diagnostic-addr=0.0.0.0:8282
+          - --disable-telemetry
+          - --set
+          - "plugins.envoy_ext_authz_grpc.addr=:9191"
+          - --set
+          - "plugins.envoy_ext_authz_grpc.path=istio/authz/allow"
+          - --set
+          - "plugins.envoy_ext_authz_grpc.enable-reflection=true"
+          - --set
+          - "decision_logs.console=true"
+          - --watch
+          - /policy/policy.rego
+        volumeMounts:
+          - mountPath: /policy
+            name: opa-policy
+        readinessProbe:
+          httpGet:
+            path: /health?plugins
+            port: 8282
+        livenessProbe:
+          httpGet:
+            path: /health?plugins
+            port: 8282
+---
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: opa-policy
+spec:
+  applyTo:
+    - groups: [""]
+      kinds: ["Pod"]
+      versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+      - apiGroups: ["*"]
+        kinds: ["Pod"]
+    namespaceSelector:
+      matchLabels:
+        opa-istio-injection: enabled
+  location: "spec.volumes[name:opa-policy]"
+  parameters:
+    pathTests:
+      - subPath: "spec.volumes[name:opa-policy]"
+        condition: MustNotExist
+    assign:
+      value:
+        name: opa-policy
+        configMap:
+          name: opa-policy
+---

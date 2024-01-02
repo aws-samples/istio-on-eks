@@ -1,6 +1,28 @@
-# Module 8 - External Authorization - Open Policy Agent
+# Module 4 - Security
 
-This module shows external authorization capabilities of Istio service-mesh on Amazon EKS using [OPA envoy
+This module shows security related capabilities of Istio service-mesh on Amazon EKS. The module is split
+into subdirectories for different security use cases.
+
+  1. [Peer authentication](README.md#peer-authentication)
+  2. [Request authentication](README.md#request-authentication)
+  3. [OPA external authorization](README.md#opa-external-authorization)
+
+## Prerequisites:
+
+  - [Module 1 - Getting Started](../01-getting-started/README.md#module-1---getting-started)
+  - [Module 2 - Initial state setup](../02-traffic-management/README.md#initial-state-setup)
+
+## Peer authentication
+
+TBD
+
+## Request authentication
+
+TBD
+
+## OPA external authorization
+
+This section shows external authorization capabilities of Istio service-mesh on Amazon EKS using [OPA envoy
 external authorizer](https://www.openpolicyagent.org/docs/latest/envoy-introduction/) as an external authorization policy
 evaluation engine.
 
@@ -10,31 +32,43 @@ integrate with external policy stores and extend the authorization semantics bey
 in Istio using [AuthorizationPolicy](https://istio.io/latest/docs/reference/config/security/authorization-policy/).
 
 The external authorization filter architecture supports deployment of the policy evaluation engine either as a
-co-located process in the same VM or pod along side the sidecar or as a separate service external to the VM or pod. In this
-module the OPA envoy external authorizer container is deployed as a sidecar along side the Istio proxies in selected
-application pods to evaluate the policies locally. This architecture reduces latency and improves availability of the
+co-located process in the same VM or pod along side the Istio proxy sidecar or as a separate service external to the VM or pod. In this
+section the OPA envoy external authorizer container is deployed as a sidecar along side the Istio proxies in selected
+application pods to evaluate the policies locally. This deployment model reduces latency and improves availability of the
 service at the cost of increasing the resource footprint of individual pods. The sidecar injection is configured
 using [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature.
 
-![External authorization](/images/08-external-authorization.svg)
+The following diagram depicts the initial OPA sidecar injection and the configuration of the envoy proxy
+to delegate all authorization decision checks to the injected sidecar followed by the subsequent
+data plane request/response flow.
 
-## Prerequisites:
-- [Module 1 - Getting Started](../01-getting-started/README.md#module-1---getting-started)
-- [Module 2 - Initial state setup](../02-traffic-management/README.md#initial-state-setup)
+![External authorization request response flow](/images/08-external-authorization.svg)
 
-## Deploy
+The following list enumerates the Istio control plane setup steps.
+  1. Gatekeeper Assign CRD is created to inject OPA sidecar in workload pods
+  2. Istio control plane is configured with the service endpoint details of the external authorization service
+  3. Istio control plane is configured to apply `CUSTOM` [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/) to workload pods
 
-Change to the module directory before proceeding further.
+The following list enumerates the Istio data plane request/response flow.
+  1. incoming client requests are intercepted by the `envoy` proxy
+  2. if the request matches `CUSTOM` [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/), then `envoy` proxy creates an ext-authz request and invokes the configured external authorization endpoint
+  3. the external authorizer sidecar evaluates authorization policy locally against the request context and decides whether to allow or deny the request
+  4. the external authorizer sidecar sends a response with a boolean result value of either `true` (allow) or `false` (deny)
+  5. if the response is boolean `true` (allow), then the envoy proxy proceeds with request invocation to the workload container; otherwise the envoy proxy denies the request and sends back HTTP `403 Forbidden` response to the client.
+
+### Deploy
+
+Change to the security module sub-directory before proceeding further.
 
 ```bash
 # This assumes that you are currently inside one of the other module sub-directories
 # like "istio-on-eks/modules/xx-xxxxx".
 # Adjust the directory path based on your current directory location.
-cd ../08-external-authorization
+cd ../04-security
 ```
 
-### Install Gatekeeper
-This module will leverage [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature to inject OPA envoy external authorizer sidecar to the application pods.
+#### Install Gatekeeper
+This section will leverage [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature to inject OPA envoy external authorizer sidecar to the application pods.
 
 Follow the instructions below to install Gatekeeper.
 
@@ -48,14 +82,14 @@ helm install gatekeeper gatekeeper/gatekeeper \
   --version 3.14.0
 ```
 
-Once the chart is installed verify that the gatekeeper pods are running.
+Once the chart is installed verify that all the gatekeeper pods are running.
 
 ```bash
 kubectl get all -n gatekeeper-system
 ```
 
-The output should list `gatekeeper-controller-manager` and `gatekeeper-audit` deployments like below. Wait till all the pods
-are running and ready.
+The output should list `gatekeeper-controller-manager` and `gatekeeper-audit` deployments like below. 
+Wait till all the pods are running and ready.
 
 ```
 NAME                                                 READY   STATUS    RESTARTS   AGE
@@ -76,12 +110,12 @@ replicaset.apps/gatekeeper-audit-5b55979884                1         1         1
 replicaset.apps/gatekeeper-controller-manager-69d88fcd4f   3         3         3       27s
 ```
 
-### Create mutations to inject OPA external authorizer sidecar
+#### Create mutations to inject OPA external authorizer sidecar
 
 Once Gatekeeper is up and running add the `Assign` rules to inject the OPA server container as a sidecar
 in the selected workload pods that you want to protect using external OPA based access control policies.
 
-The file [`opa-ext-authz-sidecar-assign.yaml`](./opa-ext-authz-sidecar-assign.yaml) contains the `Assign` rules.
+The file [`opa-ext-authz-sidecar-assign.yaml`](./opa-external-authorization/opa-ext-authz-sidecar-assign.yaml) contains the `Assign` rules.
 
 ```yaml
 apiVersion: mutations.gatekeeper.sh/v1
@@ -166,14 +200,14 @@ spec:
 ---
 ```
 
-#### `Assign` rule details
+##### `Assign` rule details
 
 | Name | Selector | Target | Location | Purpose | References |
 |------|----------|--------|----------|---------|------------|
 | `opa-istio` | All pods in namespaces with label `opa-istio-injection`=`enabled` | Pods | Containers | Mutates selected pods to add a container named `opa-istio` only if it doesn't already exist. | References a volume named `opa-policy`. |
 | `opa-policy` | All pods in namespaces with label `opa-istio-injection`=`enabled` | Pods | Volumes | Mutates selected pods to add a volume named `opa-policy` only if it doesn't already exist. | References a ConfigMap named `opa-policy`. The ConfigMap is created later in the workload namespace. |
 
-#### Plugin arguments
+##### Plugin arguments
 Note the arguments for the `opa-istio` container above. A subset of the arguments are related to the envoy external authorizer gRPC plugin and are explained in more detail below.
 
 | Name | Purpose |
@@ -182,11 +216,11 @@ Note the arguments for the `opa-istio` container above. A subset of the argument
 | `plugins.envoy_ext_authz_grpc.path=istio/authz/allow` | The response path with the decision outcome |
 | `decision_logs.console=true` | Redirect decision log to `stdout` |
 
-#### Apply the mutations
+##### Apply the mutations
 Apply the `Assign` rules in `opa-ext-authz-sidecar-assign.yaml` manifest file.
 
 ```bash
-kubectl apply -f opa-ext-authz-sidecar-assign.yaml
+kubectl apply -f ./opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -196,14 +230,14 @@ assign.mutations.gatekeeper.sh/opa-istio created
 assign.mutations.gatekeeper.sh/opa-policy created
 ```
 
-### Create DNS record for local authorizer sidecar
+#### Create DNS record for local authorizer sidecar
 
 A [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/) DNS record allows dynamic
-resolution of external authorizer endpoint by the Istio proxies. This indirection provides cluster operators flexibility
+resolution of the external authorizer endpoint by the Istio proxies. This indirection provides cluster operators flexibility
 to later relocate the external authorization service endpoint without updating the extension provider configuration in the
-Istio mesh config.
+Istio mesh config as shown later.
 
-Inspect the file `opa-ext-authz-serviceentry.yaml` for the `ServiceEntry` definition.
+Inspect the file [`opa-ext-authz-serviceentry.yaml`](./opa-external-authorization/opa-ext-authz-serviceentry.yaml) for the `ServiceEntry` definition.
 
 Note the `hosts` list value of `opa-ext-authz-grpc.local` and `ports` list value of `9191`. These values are registered
 with Istio in the next step.
@@ -233,7 +267,7 @@ using the host name `opa-ext-authz-grpc.local`.
 Apply the manifest.
 
 ```bash
-kubectl apply -f opa-ext-authz-serviceentry.yaml
+kubectl apply -f ./opa-external-authorization/opa-ext-authz-serviceentry.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -242,7 +276,7 @@ The output should look similar to the sample output below.
 serviceentry.networking.istio.io/opa-ext-authz-grpc-local created
 ```
 
-### Register OPA envoy external authorizer extension with Istio
+#### Register OPA envoy external authorizer extension with Istio
 
 Update the `istio` ConfigMap in the root namespace (`istio-system`) to register the OPA external authorizer gRPC service as
 an extension provider.
@@ -305,7 +339,7 @@ extensionProviders:
 At this point, the mesh has been setup to start enforcing authorization policies using OPA.
 The next step is to prepare the application workloads for policy enforcement.
 
-### Setup application namespace for auto-injection
+#### Setup application namespace for auto-injection
 
 Label the `workshop` namespace so that Gatekeeper can automatically mutate the application pods.
 
@@ -319,10 +353,11 @@ The output should look similar to the sample output below.
 namespace/workshop labeled
 ```
 
-### Add `AuthorizationPolicy` with `CUSTOM` action
+#### Add `AuthorizationPolicy` with `CUSTOM` action
 
-The file [`productapp-authorizationpolicy.yaml`](./productapp-authorizationpolicy.yaml) contains [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/) definition for `workshop` namespace
-with `CUSTOM` action that forwards the access control decisions to the configured external authorizer.
+The file [`productapp-authorizationpolicy.yaml`](./opa-external-authorization/productapp-authorizationpolicy.yaml)
+contains [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/)
+definition for `workshop` namespace with `CUSTOM` action that forwards the access control decisions to the configured external authorizer.
 
 Note that the authorization policy is applied to all the paths using `paths: ["*"]` matcher.
 
@@ -346,7 +381,7 @@ spec:
 Apply the AuthorizationPolicy.
 
 ```bash
-kubectl apply -f productapp-authorizationpolicy.yaml
+kubectl apply -f ./opa-external-authorization/productapp-authorizationpolicy.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -355,9 +390,10 @@ The output should look similar to the sample output below.
 authorizationpolicy.security.istio.io/productapp created
 ```
 
-### Write the OPA policy
+#### Write the OPA policy
 
-The OPA authorization policy is written in [Rego policy language](https://www.openpolicyagent.org/docs/latest/policy-language/). The policy file [`policy.rego`](./policy.rego) is kept separate to allow
+The OPA authorization policy is written in [Rego policy language](https://www.openpolicyagent.org/docs/latest/policy-language/).
+The policy file [`policy.rego`](./opa-external-authorization/policy.rego) is kept separate to allow
 policy authors to test the policies independently by using `opa test` command.
 
 For simplicity the policy is statically compiled and loaded in memory with the help of `opa-policy` ConfigMap
@@ -369,11 +405,11 @@ The policy used in the demo uses Base64 encoded basic authentication headers and
 assignment in the policy document. You can easily replace this basic example with any of the supported 
 authentication and authorization mechanisms like OIDC and OAuth2 using JWT tokens.
 
-#### Policy description
+##### Policy description
 
 User `alice` is assigned to `guest` role and user `bob` is assigned to `admin` role. The roles
 have associated permissions to access certain protected resources hosted by specific services.
-There is also a set unprotected resources that can be invoked by any user.
+There is also a set of unprotected resources that can be invoked by any user.
 
 The policy enforces the following rules.
 
@@ -381,7 +417,7 @@ The policy enforces the following rules.
     ```
     ...
     allow if {
-      some unprotected_operation in unprotected_operations
+        some unprotected_operation in unprotected_operations
         unprotected_operation.host = http_destination[0]
         unprotected_operation.port = http_destination[1]
         unprotected_operation.method = http_request.method
@@ -389,7 +425,7 @@ The policy enforces the following rules.
     }
     ...
     ```
-  * Allow users with `guest` role to call `GET /` resources hosted on `frontend.workshop.svc.cluster.local` service on port `9000`
+  * Allow users with `guest` role to call `GET /` resources hosted by `frontend.workshop.svc.cluster.local` service at port `9000`
     ```
     ...
     "guest": [{
@@ -400,8 +436,8 @@ The policy enforces the following rules.
     }]
     ...
     ```
-  * Allow users with `admin` role to access `GET /` and `POST /products` resources hosted on
-    `frontend.workshop.svc.cluster.local` service on port `9000`
+  * Allow users with `admin` role to access `GET /` and `POST /products` resources hosted by
+    `frontend.workshop.svc.cluster.local` service at port `9000`
     ```
     ...
     "admin": [
@@ -427,15 +463,15 @@ The policy enforces the following rules.
     ...
     ```
 
-#### Application personas
+##### Application personas
 The following table lists the application personas.
 
-| Persona | Function |
-|---------|---------|
+| Role | Function |
+|------|----------|
 | `guest` | Views products list. |
 | `admin` | Views and modifies products list. |
 
-#### Protected resources
+##### Protected resources
 The following table lists the protected resources and the roles authorized to access them. All access
 requests to these protected resources by any other roles or unauthenticated identities are denied.
 
@@ -444,7 +480,7 @@ requests to these protected resources by any other roles or unauthenticated iden
 | `frontend.workshop.svc.cluster.local` | `9000` | `GET` | `/` | `guest`, `admin` |
 | `frontend.workshop.svc.cluster.local` | `9000` | `POST` | `/products` | `admin` |
 
-#### Unprotected resources
+##### Unprotected resources
 These resources are unprotected and can be accessed by any entity.
 
 | Host | Port | Method | Path pattern |
@@ -454,7 +490,7 @@ These resources are unprotected and can be accessed by any entity.
 | `productcatalog.workshop.svc.cluster.local` | `5000` | `POST` | `^/products/\\d+$` |
 | `catalogdetail.workshop.svc.cluster.local` | `3000` | `GET` | `^/catalogDetail$` |
 
-#### User role mappings
+##### User role mappings
 The following table lists the user role assignments.
 
 | Username | Role |
@@ -463,13 +499,13 @@ The following table lists the user role assignments.
 | `bob` | `admin` |
 | `charlie` | - |
 
-Refer the [`policy.rego`](./policy.rego) file to understand the policy evaluation logic.
+Refer the [`policy.rego`](./opa-external-authorization/policy.rego) file for the policy evaluation logic.
 
-### Test the policy rules
+#### Test the policy rules
 
-The [`policy_test.rego`](./policy_test.rego) file contains test cases for the policy specified in `policy.rego` file.
+The [`policy_test.rego`](./opa-external-authorization/policy_test.rego) file contains test cases for the policy specified in `policy.rego` file.
 
-#### Sample test scenario: `guest` role accesses `POST /products` at `frontend.workshop.svc.cluster.local:9000`
+##### Sample test scenario: `guest` role is denied access to `POST /products` at `frontend.workshop.svc.cluster.local:9000`
 The below snippet tests that user `alice` having `guest` role is not allowed to call `POST /products` hosted
 on `frontend.workshop.svc.cluster.local:9000`.
 
@@ -491,7 +527,7 @@ test_post_products_guest_denied if {
 ...
 ```
 
-#### Sample test scenario: `admin` role accesses `POST /products` at `frontend.workshop.svc.cluster.local:9000`
+##### Sample test scenario: `admin` role is allowed access to `POST /products` at `frontend.workshop.svc.cluster.local:9000`
 The below snippet tests that user `bob` having `admin` role is allowed to call `POST /products`.
 
 ```
@@ -512,7 +548,7 @@ test_post_products_admin_allowed if {
 ...
 ```
 
-#### Test scenario: any other identity accesses `POST /products` at `frontend.workshop.svc.cluster.local:9000`
+##### Sample test scenario: any other identity is denied access to `POST /products` at `frontend.workshop.svc.cluster.local:9000`
 The below snippet tests that the call to `POST /products` by user `charlie` having no assigned roles is denied.
 
 ```
@@ -537,10 +573,10 @@ The tests can be executed either by installing the `opa` binary following the in
 [Running OPA](https://www.openpolicyagent.org/docs/latest/#running-opa) or by running the same container
 image injected as sidecar.
 
-#### Run tests using installed `opa` binary
+##### Run tests using installed `opa` binary
 
 ```bash
-opa test ./policy_test.rego ./policy.rego
+opa test ./opa-external-authorization/policy_test.rego ./opa-external-authorization/policy.rego
 ```
 
 If the policy is written correctly then all the tests should pass and you should see an output similar to the sample output
@@ -550,12 +586,12 @@ below.
 PASS: xx/xx
 ```
 
-#### Run tests using container image
+##### Run tests using container image
 
 ```bash
 docker run \
   --name opa-istio \
-  -v ./:/policy \
+  -v ./opa-external-authorization/:/policy \
   --rm \
   openpolicyagent/opa:latest-istio \
   test /policy/policy_test.rego /policy/policy.rego
@@ -570,12 +606,14 @@ below.
 PASS: xx/xx
 ```
 
-### Generate `opa-policy` ConfigMap
+#### Generate `opa-policy` ConfigMap
 
-After authoring and testing the policy rules the next step is to generate a ConfigMap by importing
-the policy file. To achieve this [kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/)'s built-in [ConfigMapGenerator](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/#_configmapgenerator_) is used.
+After authoring and testing the policy rules, the next step is to generate a ConfigMap by importing
+the policy file. To achieve this, [kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/)'s built-in
+[ConfigMapGenerator](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/#_configmapgenerator_) is used.
 
-The policy file is imported through [`kustomization.yaml`](./kustomization.yaml) to create the `opa-policy` ConfigMap in the `workshop` namespace. This ConfigMap is mounted as a volume in the injected `opa-istio` sidecar as explained earlier.
+The policy file is imported through [`kustomization.yaml`](./opa-external-authorization/kustomization.yaml) to create the
+`opa-policy` ConfigMap in the `workshop` namespace. This ConfigMap is mounted as a volume in the injected `opa-istio` sidecar as explained earlier.
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -592,7 +630,7 @@ generatorOptions:
 Apply the `Kustomization` to create the ConfigMap.
 
 ```bash
-kubectl apply -k .
+kubectl apply -k ./opa-external-authorization/
 ```
 
 The output should look similar to the sample output below.
@@ -607,7 +645,7 @@ Verify that the generated ConfigMap contains the entire content of the `policy.r
 kubectl describe configmap/opa-policy -n workshop
 ```
 
-The output should look similar to the sample output below.
+The output should look similar to the sample excerpt below.
 
 ```
 Name:         opa-policy
@@ -644,9 +682,9 @@ BinaryData
 Events:  <none>
 ```
 
-### Restart the application deployments
+#### Restart the application deployments
 
-Restart the application deployments to recreate the pods so that Gatekeeper can inject the authorizer sidecar.
+Restart the application deployments to recreate the pods so that Gatekeeper can inject the OPA authorizer sidecar.
 
 ```bash
 kubectl rollout restart deployment/frontend -n workshop
@@ -695,14 +733,14 @@ frontend-5ddfb8b6c4-g5x5m         3/3     Running   0          63s
 productcatalog-987858dbd-qk69t    3/3     Running   0          62s
 ```
 
-## Validate
+### Validate
 
-### Test accessing `frontend.workload.svc.cluster.local` service
+#### Test accessing `frontend.workload.svc.cluster.local` service
 
-#### Unauthorized request to `GET /` with no authentication
+##### Unauthorized request to `GET /` with no authentication
 
-Generate a `curl` request with a randomly generated `x-req-id` header to allow us to uniquely locate the decision log entry 
-when searching the OPA decision log.
+Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
+to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
@@ -711,26 +749,26 @@ kubectl exec -it deployment/istio-ingress -c istio-proxy -n istio-ingress -- cur
 
 The response should show `403` HTTP status.
 
-Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` request header.
+Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` custom
+HTTP request header.
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
 ```
 
-The decision log output should have a matching entry showing the decision path `"path":"istio/authz/allow"` and result
-`"result":false` like below.
+The decision log output should have a matching entry showing `"result":false` like below.
 
 ```
-{"decision_id":"4c3f9c10-081c-475b-9707-1072b03186fc","input":{"attributes":{"destination":{"address":{"socketAddress":{"address":"10.0.22.121","portValue":9000}}},"metadataContext":{},"request":{"http":{"headers":{":authority":"frontend.workshop.svc.cluster.local:9000",":method":"GET",":path":"/",":scheme":"http","accept":"*/*","user-agent":"curl/7.81.0","x-forwarded-proto":"http","x-req-id":"32654","x-request-id":"dfdef136-3c86-4c39-8531-971c30cc7f24"},"host":"frontend.workshop.svc.cluster.local:9000","id":"2175407958114839515","method":"GET","path":"/","protocol":"HTTP/1.1","scheme":"http"},"time":"2023-12-19T11:52:41.675540Z"},"source":{"address":{"socketAddress":{"address":"10.0.27.139","portValue":59176}}}},"parsed_body":null,"parsed_path":[""],"parsed_query":{},"truncated_body":false,"version":{"encoding":"protojson","ext_authz":"v3"}},"labels":{"id":"dfdc067f-6b52-452a-80b1-7364ea06c4fb","version":"0.59.0-envoy-2"},"level":"info","metrics":{"timer_rego_query_eval_ns":186465,"timer_server_handler_ns":464885},"msg":"Decision Log","path":"istio/authz/allow","result":false,"time":"2023-12-19T11:52:41Z","timestamp":"2023-12-19T11:52:41.676500494Z","type":"openpolicyagent.org/decision_logs"}
+{"decision_id":"...",...,"result":false,...}
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-#### Authorized request to `GET /` with `guest` role
+##### Authorized request to `GET /` with `guest` role
 
-Generate a `curl` request with a randomly generated `x-req-id` header to allow us to uniquely locate the decision log entry 
-when searching the OPA decision log.
+Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
+to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
@@ -739,26 +777,26 @@ kubectl exec -it deployment/istio-ingress -c istio-proxy -n istio-ingress -- cur
 
 The response should show `200` HTTP status.
 
-Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` request header.
+Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom 
+HTTP request header.
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
 ```
 
-The decision log output should have a matching entry showing the decision path `"path":"istio/authz/allow"` and result
-`"result":true` like below.
+The decision log output should have a matching entry showing `"result":true` like below.
 
 ```
-{"decision_id":"2e41483c-97ab-46b3-a574-9e5ca653da6c","input":{"attributes":{"destination":{"address":{"socketAddress":{"address":"10.0.22.121","portValue":9000}}},"metadataContext":{},"request":{"http":{"headers":{":authority":"frontend.workshop.svc.cluster.local:9000",":method":"GET",":path":"/",":scheme":"http","accept":"*/*","authorization":"Basic YWxpY2U6cGFzc3dvcmQ=","user-agent":"curl/7.81.0","x-forwarded-proto":"http","x-req-id":"20580","x-request-id":"2c8c5b8c-e8c4-43a8-8541-3b79735af4fd"},"host":"frontend.workshop.svc.cluster.local:9000","id":"4654504217714413614","method":"GET","path":"/","protocol":"HTTP/1.1","scheme":"http"},"time":"2023-12-19T12:14:49.347218Z"},"source":{"address":{"socketAddress":{"address":"10.0.27.139","portValue":53578}}}},"parsed_body":null,"parsed_path":[""],"parsed_query":{},"truncated_body":false,"version":{"encoding":"protojson","ext_authz":"v3"}},"labels":{"id":"dfdc067f-6b52-452a-80b1-7364ea06c4fb","version":"0.59.0-envoy-2"},"level":"info","metrics":{"timer_rego_query_eval_ns":266654,"timer_server_handler_ns":532453},"msg":"Decision Log","path":"istio/authz/allow","result":true,"time":"2023-12-19T12:14:49Z","timestamp":"2023-12-19T12:14:49.348244586Z","type":"openpolicyagent.org/decision_logs"}
+{"decision_id":"...",...,"result":true,...}
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-#### Authorized request to `GET /` with `admin` role
+##### Authorized request to `GET /` with `admin` role
 
-Generate a `curl` request with a randomly generated `x-req-id` header to allow us to uniquely locate the decision log entry 
-when searching the OPA decision log.
+Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
+to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
@@ -767,26 +805,26 @@ kubectl exec -it deployment/istio-ingress -c istio-proxy -n istio-ingress -- cur
 
 The response should show `200` HTTP status.
 
-Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` request header.
+Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom 
+HTTP request header.
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
 ```
 
-The decision log output should have a matching entry showing the decision path `"path":"istio/authz/allow"` and result
-`"result":true` like below.
+The decision log output should have a matching entry showing `"result":true` like below.
 
 ```
-{"decision_id":"5dc06aca-45f8-43fe-a347-56361a94cd03","input":{"attributes":{"destination":{"address":{"socketAddress":{"address":"10.0.22.121","portValue":9000}}},"metadataContext":{},"request":{"http":{"headers":{":authority":"frontend.workshop.svc.cluster.local:9000",":method":"GET",":path":"/",":scheme":"http","accept":"*/*","authorization":"Basic Ym9iOnBhc3N3b3Jk","user-agent":"curl/7.81.0","x-forwarded-proto":"http","x-req-id":"29545","x-request-id":"5df06fd5-88eb-4bef-829a-4b6e84be2870"},"host":"frontend.workshop.svc.cluster.local:9000","id":"15874637492178973630","method":"GET","path":"/","protocol":"HTTP/1.1","scheme":"http"},"time":"2023-12-19T12:17:46.411086Z"},"source":{"address":{"socketAddress":{"address":"10.0.27.139","portValue":44750}}}},"parsed_body":null,"parsed_path":[""],"parsed_query":{},"truncated_body":false,"version":{"encoding":"protojson","ext_authz":"v3"}},"labels":{"id":"dfdc067f-6b52-452a-80b1-7364ea06c4fb","version":"0.59.0-envoy-2"},"level":"info","metrics":{"timer_rego_query_eval_ns":308266,"timer_server_handler_ns":573759},"msg":"Decision Log","path":"istio/authz/allow","result":true,"time":"2023-12-19T12:17:46Z","timestamp":"2023-12-19T12:17:46.412202442Z","type":"openpolicyagent.org/decision_logs"}
+{"decision_id":"...",...,"result":true,...}
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-#### Unauthorized request to `GET /products` with `guest` role
+##### Unauthorized request to `GET /products` with `guest` role
 
-Generate a `curl` request with a randomly generated `x-req-id` header to allow us to uniquely locate the decision log entry 
-when searching the OPA decision log.
+Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
+to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
@@ -795,26 +833,26 @@ kubectl exec -it deployment/istio-ingress -c istio-proxy -n istio-ingress -- cur
 
 The response should show `403` HTTP status.
 
-Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` request header.
+Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` custom
+HTTP request header.
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
 ```
 
-The decision log output should have a matching entry showing the decision path `"path":"istio/authz/allow"` and result
-`"result":false` like below.
+The decision log output should have a matching entry showing `"result":false` like below.
 
 ```
-{"decision_id":"ea431db0-0189-4706-a5ee-04e5183685aa","input":{"attributes":{"destination":{"address":{"socketAddress":{"address":"10.0.22.121","portValue":9000}}},"metadataContext":{},"request":{"http":{"headers":{":authority":"frontend.workshop.svc.cluster.local:9000",":method":"POST",":path":"/products",":scheme":"http","accept":"*/*","authorization":"Basic YWxpY2U6cGFzc3dvcmQ=","user-agent":"curl/7.81.0","x-forwarded-proto":"http","x-req-id":"6550","x-request-id":"60d427bc-f343-4186-93cf-18ee7f4421d1"},"host":"frontend.workshop.svc.cluster.local:9000","id":"2845870304155550950","method":"POST","path":"/products","protocol":"HTTP/1.1","scheme":"http"},"time":"2023-12-19T12:20:35.486340Z"},"source":{"address":{"socketAddress":{"address":"10.0.27.139","portValue":54128}}}},"parsed_body":null,"parsed_path":["products"],"parsed_query":{},"truncated_body":false,"version":{"encoding":"protojson","ext_authz":"v3"}},"labels":{"id":"dfdc067f-6b52-452a-80b1-7364ea06c4fb","version":"0.59.0-envoy-2"},"level":"info","metrics":{"timer_rego_query_eval_ns":296300,"timer_server_handler_ns":553111},"msg":"Decision Log","path":"istio/authz/allow","result":false,"time":"2023-12-19T12:20:35Z","timestamp":"2023-12-19T12:20:35.487438936Z","type":"openpolicyagent.org/decision_logs"}
+{"decision_id":"...",...,"result":false,...}
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-#### Authorized request to `GET /products` with `admin` role
+##### Authorized request to `GET /products` with `admin` role
 
-Generate a `curl` request with a randomly generated `x-req-id` header to allow us to uniquely locate the decision log entry 
-when searching the OPA decision log.
+Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
+to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
@@ -823,41 +861,41 @@ kubectl exec -it deployment/istio-ingress -c istio-proxy -n istio-ingress -- cur
 
 The response should show `302` HTTP status.
 
-Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` request header.
+Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom
+HTTP request header.
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
 ```
 
-The decision log output should have a matching entry showing the decision path `"path":"istio/authz/allow"` and result
-`"result":true` like below.
+The decision log output should have a matching entry showing `"result":true` like below.
 
 ```
-{"decision_id":"ec715c22-592b-4d6b-9ec4-652e5e7df9c4","input":{"attributes":{"destination":{"address":{"socketAddress":{"address":"10.0.22.121","portValue":9000}}},"metadataContext":{},"request":{"http":{"headers":{":authority":"frontend.workshop.svc.cluster.local:9000",":method":"POST",":path":"/products",":scheme":"http","accept":"*/*","authorization":"Basic Ym9iOnBhc3N3b3Jk","content-length":"16","content-type":"application/x-www-form-urlencoded","user-agent":"curl/7.81.0","x-forwarded-proto":"http","x-req-id":"32490","x-request-id":"129babe9-a977-4235-87cb-4bc799880151"},"host":"frontend.workshop.svc.cluster.local:9000","id":"4407933869593996024","method":"POST","path":"/products","protocol":"HTTP/1.1","scheme":"http"},"time":"2023-12-19T12:22:14.096162Z"},"source":{"address":{"socketAddress":{"address":"10.0.27.139","portValue":33784}}}},"parsed_body":null,"parsed_path":["products"],"parsed_query":{},"truncated_body":false,"version":{"encoding":"protojson","ext_authz":"v3"}},"labels":{"id":"dfdc067f-6b52-452a-80b1-7364ea06c4fb","version":"0.59.0-envoy-2"},"level":"info","metrics":{"timer_rego_query_eval_ns":298124,"timer_server_handler_ns":554835},"msg":"Decision Log","path":"istio/authz/allow","result":true,"time":"2023-12-19T12:22:14Z","timestamp":"2023-12-19T12:22:14.097249373Z","type":"openpolicyagent.org/decision_logs"}
+{"decision_id":"...",...,"result":true,...}
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-## Clean up
+### Clean up
 
-Clean up the resources set up in this module.
+Clean up the resources set up in this section.
 
 ```bash
 # Delete the Assign rules
-kubectl delete -f opa-ext-authz-sidecar-assign.yaml
+kubectl delete -f ./opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
 # Clean up the ServiceEntry
-kubectl delete -f opa-ext-authz-serviceentry.yaml
+kubectl delete -f ./opa-external-authorization/opa-ext-authz-serviceentry.yaml
 
 # Delete the opa-policy ConfigMap
-kubectl delete -k .
+kubectl delete -k ./opa-external-authorization/
 
 # Remove GateKeeper resources
 helm uninstall gatekeeper -n gatekeeper-system
 helm repo remove gatekeeper
 
 # Remove AuthorizationPolicy
-kubectl delete -f productapp-authorizationpolicy.yaml
+kubectl delete -f ./opa-external-authorization/productapp-authorizationpolicy.yaml
 
 # Deregister the extension provider
 kubectl get configmap/istio -n istio-system -o json \

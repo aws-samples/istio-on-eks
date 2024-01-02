@@ -821,7 +821,7 @@ The decision log output should have a matching entry showing `"result":true` lik
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-##### Unauthorized request to `GET /products` with `guest` role
+##### Unauthorized request to `POST /products` with `guest` role
 
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
@@ -849,7 +849,7 @@ The decision log output should have a matching entry showing `"result":false` li
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
 If no match is returned then rerun the `curl` request and search within a minute or so.
 
-##### Authorized request to `GET /products` with `admin` role
+##### Authorized request to `POST /products` with `admin` role
 
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.

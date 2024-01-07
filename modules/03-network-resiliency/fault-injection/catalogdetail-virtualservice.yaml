@@ -9,14 +9,10 @@ spec:
   http:
   - route:
     - destination:
-        host: catalogdetail
-        port:
-          number: 3000             
+        host: catalogdetail           
         subset: v1
       weight: 50
     - destination:
-        host: catalogdetail
-        port:
-          number: 3000             
+        host: catalogdetail         
         subset: v2
       weight: 50  

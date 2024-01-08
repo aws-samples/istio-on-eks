@@ -337,26 +337,25 @@ deployment.apps/fortio-deploy created
 Log in to the client pod and use the fortio tool to call prodcutcatalog. Pass in curl to indicate that you just want to make one call:
 
 ```bash
-$ export FORTIO_POD=$(kubectl get pods -l app=fortio -o 'jsonpath={.items[0].metadata.name}')
+export FORTIO_POD=$(kubectl get pods -n workshop -l app=fortio -o 'jsonpath={.items[0].metadata.name}')
 kubectl exec "$FORTIO_POD" -c fortio -n workshop /usr/bin/fortio curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
 Output should be similar to below:
 
 ```bash
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency/fortio (main) $ kubectl exec "$FORTIO_POD" -c fortio -n workshop /usr/bin/fortio curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
-{"ts":1698264664.897093,"level":"info","r":1,"file":"scli.go","line":123,"msg":"Starting","command":"Φορτίο","version":"1.60.3 h1:adR0uf/69M5xxKaMLAautVf9FIVkEpMwuEWyMaaSnI0= go1.20.10 amd64 linux"}
+{"ts":1704746733.172561,"level":"info","r":1,"file":"scli.go","line":123,"msg":"Starting","command":"Φορτίο","version":"1.60.3 h1:adR0uf/69M5xxKaMLAautVf9FIVkEpMwuEWyMaaSnI0= go1.20.10 amd64 linux"}
 HTTP/1.1 200 OK
 x-powered-by: Express
 content-type: application/json; charset=utf-8
 content-length: 37
 etag: W/"25-+DP7kANx3olb0HJqt5zDWgaO2Gg"
-date: Wed, 25 Oct 2023 20:11:04 GMT
-x-envoy-upstream-service-time: 6
+date: Mon, 08 Jan 2024 20:45:33 GMT
+x-envoy-upstream-service-time: 8
 server: envoy
- 
-{"version":"1","vendors":["ABC.com"]}
+
+{"version":"1","vendors":["ABC.com"]}%    
 ```
 
 ### Tripping the circuit breaker

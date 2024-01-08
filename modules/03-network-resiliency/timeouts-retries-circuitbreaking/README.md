@@ -360,6 +360,8 @@ server: envoy
 
 ### Tripping the circuit breaker
 
+Call the catalogdetail service with two concurrent connections (-c 2) and send 20 requests (-n 20):
+
 ```bash
 kubectl exec "$FORTIO_POD" -c fortio -n workshop -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
@@ -422,3 +424,79 @@ Almost all requests success except few! The istio-proxy does allow for some leew
 Code 200 : 17 (85.0 %)
 Code 503 : 3 (15.0 %)
 ```
+
+Increase the number of concurrent connections up to 3:
+
+```bash
+kubectl exec "$FORTIO_POD" -c fortio -n workshop -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+``` 
+Output should be similar to below:
+
+```bash
+{"ts":1704747392.512409,"level":"info","r":1,"file":"logger.go","line":254,"msg":"Log level is now 3 Warning (was 2 Info)"}
+Fortio 1.60.3 running at 0 queries per second, 2->2 procs, for 30 calls: http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+Starting at max qps with 3 thread(s) [gomax 2] for exactly 30 calls (10 per thread + 0)
+{"ts":1704747392.520178,"level":"warn","r":28,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704747392.520799,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.523468,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.525391,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.527484,"level":"warn","r":27,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704747392.528848,"level":"warn","r":27,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704747392.531731,"level":"warn","r":28,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704747392.533632,"level":"warn","r":28,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704747392.534727,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.536192,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.538116,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.539070,"level":"warn","r":27,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704747392.541580,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.543714,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.545742,"level":"warn","r":29,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":2,"run":0}
+{"ts":1704747392.550258,"level":"warn","r":27,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704747392.554057,"level":"warn","r":28,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704747392.560066,"level":"warn","r":28,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+Ended after 50.285039ms : 30 calls. qps=596.6
+Aggregated Function Time : count 30 avg 0.0039136975 +/- 0.003494 min 0.00032006 max 0.011210633 sum 0.117410925
+# range, mid point, percentile, count
+>= 0.00032006 <= 0.001 , 0.00066003 , 26.67, 8
+> 0.001 <= 0.002 , 0.0015 , 40.00, 4
+> 0.002 <= 0.003 , 0.0025 , 56.67, 5
+> 0.003 <= 0.004 , 0.0035 , 60.00, 1
+> 0.004 <= 0.005 , 0.0045 , 63.33, 1
+> 0.005 <= 0.006 , 0.0055 , 76.67, 4
+> 0.007 <= 0.008 , 0.0075 , 80.00, 1
+> 0.008 <= 0.009 , 0.0085 , 86.67, 2
+> 0.009 <= 0.01 , 0.0095 , 93.33, 2
+> 0.01 <= 0.011 , 0.0105 , 96.67, 1
+> 0.011 <= 0.0112106 , 0.0111053 , 100.00, 1
+# target 50% 0.0026
+# target 75% 0.005875
+# target 90% 0.0095
+# target 99% 0.0111474
+# target 99.9% 0.0112043
+Error cases : count 18 avg 0.001365681 +/- 0.0008843 min 0.00032006 max 0.003261174 sum 0.024582258
+# range, mid point, percentile, count
+>= 0.00032006 <= 0.001 , 0.00066003 , 44.44, 8
+> 0.001 <= 0.002 , 0.0015 , 66.67, 4
+> 0.002 <= 0.003 , 0.0025 , 94.44, 5
+> 0.003 <= 0.00326117 , 0.00313059 , 100.00, 1
+# target 50% 0.00125
+# target 75% 0.0023
+# target 90% 0.00284
+# target 99% 0.00321416
+# target 99.9% 0.00325647
+# Socket and IP used for each connection:
+[0]   5 socket used, resolved to 172.20.233.48:3000, connection timing : count 5 avg 0.0001612534 +/- 8.84e-05 min 8.515e-05 max 0.000330062 sum 0.000806267
+[1]   5 socket used, resolved to 172.20.233.48:3000, connection timing : count 5 avg 0.000214197 +/- 0.0002477 min 5.6614e-05 max 0.00070467 sum 0.001070985
+[2]   9 socket used, resolved to 172.20.233.48:3000, connection timing : count 9 avg 0.00011278589 +/- 5.424e-05 min 6.4739e-05 max 0.000243749 sum 0.001015073
+Connection time (s) : count 19 avg 0.00015222763 +/- 0.0001462 min 5.6614e-05 max 0.00070467 sum 0.002892325
+Sockets used: 19 (for perfect keepalive, would be 3)
+Uniform: false, Jitter: false, Catchup allowed: true
+IP addresses distribution:
+172.20.233.48:3000: 19
+Code 200 : 12 (40.0 %)
+### Code 503 : 18 (60.0 %)
+Response Header Sizes : count 30 avg 94.8 +/- 116.1 min 0 max 237 sum 2844
+Response Body/Total Sizes : count 30 avg 256 +/- 18.59 min 241 max 283 sum 7680
+All done 30 calls (plus 0 warmup) 3.914 ms avg, 596.6 qps
+```
+

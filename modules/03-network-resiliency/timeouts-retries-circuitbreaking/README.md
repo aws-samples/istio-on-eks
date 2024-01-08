@@ -287,6 +287,22 @@ Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ kubectl 
 ```
 ![](../../../images/03-retries.png)
 
+### Cleanup for retries
+To clean up the retries and remove the services that were deployed, please run the following commands:
+
+```bash
+ kubectl apply -f setup-mesh-resources
+```
+output should be similar to:
+
+```bash
+destinationrule.networking.istio.io/catalogdetail unchanged
+virtualservice.networking.istio.io/catalogdetail configured
+virtualservice.networking.istio.io/frontend unchanged
+virtualservice.networking.istio.io/productcatalog configured
+```
+
+
 ### Circuit Breaking
 
 Create a destination rule to apply circuit breaking settings when calling productcatalog service.

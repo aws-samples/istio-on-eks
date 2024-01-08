@@ -125,6 +125,22 @@ Time taken to start trasnfer: 2.006628
 
 ![](../../../images/03-timeouts.png)
 
+### Cleanup for timeouts
+To clean up the timeouts and remove the services that were deployed, please run the following commands:
+
+```bash
+ kubectl apply -f setup-mesh-resources
+```
+output should be similar to:
+
+```bash
+destinationrule.networking.istio.io/catalogdetail unchanged
+virtualservice.networking.istio.io/catalogdetail configured
+virtualservice.networking.istio.io/frontend unchanged
+virtualservice.networking.istio.io/productcatalog configured
+```
+
+
 ### Retries:
 
 Let's add retries of 2 for productcatalog-retries-virtualservice.yaml 

@@ -2,16 +2,25 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: catalogdetail
+  namespace: workshop
 spec:
   hosts:
   - catalogdetail
   http:
-  - fault:
+  - match:
+    - headers:
+        user-type:
+          exact: internal
+    fault:
       delay:
         percentage:
           value: 100
-        fixedDelay: 600s
+        fixedDelay: 15s
     route:
     - destination:
         host: catalogdetail
-        subset: v2
+        subset: v1
+  - route:
+    - destination:
+        host: catalogdetail
+        subset: v1

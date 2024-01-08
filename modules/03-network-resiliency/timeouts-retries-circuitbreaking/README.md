@@ -143,6 +143,18 @@ virtualservice.networking.istio.io/productcatalog configured
 
 ### Retries:
 
+For Retries, first execute the catalogdetail-delay-virtualservice.yaml
+
+```bash 
+kubectl apply -f catalogdetail-delay-virtualservice.yaml
+```
+
+output should be similar to:
+
+```bash
+virtualservice.networking.istio.io/catalogdetail configured
+```
+
 Let's add retries of 2 for productcatalog-retries-virtualservice.yaml 
 
 ```bash 

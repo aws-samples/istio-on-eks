@@ -320,6 +320,10 @@ destinationrule.networking.istio.io/catalogdetail created
 Install [fortio](https://github.com/fortio/fortio)
 
 ```bash 
+brew install fortio
+```
+
+```bash 
 kubectl apply -f fortio.yaml
 ```
 

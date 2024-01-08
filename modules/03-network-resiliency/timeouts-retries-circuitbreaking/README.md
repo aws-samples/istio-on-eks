@@ -361,39 +361,64 @@ server: envoy
 ### Tripping the circuit breaker
 
 ```bash
-kubectl exec "$FORTIO_POD" -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec "$FORTIO_POD" -c fortio -n workshop -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
 Output should be similar to below:
 
 ```bash
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency/fortio (main) $ kubectl exec "$FORTIO_POD" -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
-{"ts":1698262242.288381,"level":"info","r":1,"file":"logger.go","line":254,"msg":"Log level is now 3 Warning (was 2 Info)"}
+{"ts":1704746942.859803,"level":"info","r":1,"file":"logger.go","line":254,"msg":"Log level is now 3 Warning (was 2 Info)"}
 Fortio 1.60.3 running at 0 queries per second, 2->2 procs, for 20 calls: http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 Starting at max qps with 2 thread(s) [gomax 2] for exactly 20 calls (10 per thread + 0)
-Ended after 27.000998ms : 20 calls. qps=740.71
-Aggregated Function Time : count 20 avg 0.002298304 +/- 0.002456 min 0.000835011 max 0.011417996 sum 0.04596608
+{"ts":1704746942.889725,"level":"warn","r":13,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704746942.895346,"level":"warn","r":12,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704746942.912859,"level":"warn","r":13,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+{"ts":1704746942.918274,"level":"warn","r":12,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":0,"run":0}
+{"ts":1704746942.927350,"level":"warn","r":13,"file":"http_client.go","line":1104,"msg":"Non ok http code","code":503,"status":"HTTP/1.1 503","thread":1,"run":0}
+Ended after 65.360704ms : 20 calls. qps=305.99
+Aggregated Function Time : count 20 avg 0.0063910061 +/- 0.003646 min 0.000391494 max 0.013544634 sum 0.127820122
 # range, mid point, percentile, count
->= 0.000835011 <= 0.001 , 0.000917506 , 25.00, 5
-> 0.001 <= 0.002 , 0.0015 , 75.00, 10
-> 0.003 <= 0.004 , 0.0035 , 80.00, 1
-> 0.004 <= 0.005 , 0.0045 , 95.00, 3
-> 0.011 <= 0.011418 , 0.011209 , 100.00, 1
-# target 50% 0.0015
-# target 75% 0.002
-# target 90% 0.00466667
-# target 99% 0.0113344
-# target 99.9% 0.0114096
-Error cases : no data
+>= 0.000391494 <= 0.001 , 0.000695747 , 15.00, 3
+> 0.003 <= 0.004 , 0.0035 , 25.00, 2
+> 0.004 <= 0.005 , 0.0045 , 30.00, 1
+> 0.005 <= 0.006 , 0.0055 , 45.00, 3
+> 0.006 <= 0.007 , 0.0065 , 65.00, 4
+> 0.007 <= 0.008 , 0.0075 , 70.00, 1
+> 0.008 <= 0.009 , 0.0085 , 75.00, 1
+> 0.009 <= 0.01 , 0.0095 , 85.00, 2
+> 0.011 <= 0.012 , 0.0115 , 90.00, 1
+> 0.012 <= 0.0135446 , 0.0127723 , 100.00, 2
+# target 50% 0.00625
+# target 75% 0.009
+# target 90% 0.012
+# target 99% 0.0133902
+# target 99.9% 0.0135292
+Error cases : count 5 avg 0.001746463 +/- 0.001537 min 0.000391494 max 0.003912496 sum 0.008732315
+# range, mid point, percentile, count
+>= 0.000391494 <= 0.001 , 0.000695747 , 60.00, 3
+> 0.003 <= 0.0039125 , 0.00345625 , 100.00, 2
+# target 50% 0.000847874
+# target 75% 0.00334219
+# target 90% 0.00368437
+# target 99% 0.00388968
+# target 99.9% 0.00391021
 # Socket and IP used for each connection:
-[0]   1 socket used, resolved to 172.20.120.174:3000, connection timing : count 1 avg 0.000120428 +/- 0 min 0.000120428 max 0.000120428 sum 0.000120428
-[1]   1 socket used, resolved to 172.20.120.174:3000, connection timing : count 1 avg 0.000564218 +/- 0 min 0.000564218 max 0.000564218 sum 0.000564218
-Connection time (s) : count 2 avg 0.000342323 +/- 0.0002219 min 0.000120428 max 0.000564218 sum 0.000684646
-Sockets used: 2 (for perfect keepalive, would be 2)
+[0]   3 socket used, resolved to 172.20.233.48:3000, connection timing : count 3 avg 8.8641667e-05 +/- 1.719e-05 min 6.4519e-05 max 0.000103303 sum 0.000265925
+[1]   3 socket used, resolved to 172.20.233.48:3000, connection timing : count 3 avg 0.000145408 +/- 7.262e-05 min 8.4711e-05 max 0.000247501 sum 0.000436224
+Connection time (s) : count 6 avg 0.00011702483 +/- 5.992e-05 min 6.4519e-05 max 0.000247501 sum 0.000702149
+Sockets used: 6 (for perfect keepalive, would be 2)
 Uniform: false, Jitter: false, Catchup allowed: true
 IP addresses distribution:
-172.20.120.174:3000: 2
-Code 200 : 20 (100.0 %)
-Response Header Sizes : count 20 avg 1344 +/- 5 min 1339 max 1349 sum 26880
-Response Body/Total Sizes : count 20 avg 1385.5 +/- 9.5 min 1376 max 1395 sum 27710
-All done 20 calls (plus 0 warmup) 2.298 ms avg, 740.7 qps
+172.20.233.48:3000: 6
+Code 200 : 15 (75.0 %)
+Code 503 : 5 (25.0 %)
+Response Header Sizes : count 20 avg 177.75 +/- 102.6 min 0 max 237 sum 3555
+Response Body/Total Sizes : count 20 avg 268.9 +/- 16.57 min 241 max 283 sum 5378
+All done 20 calls (plus 0 warmup) 6.391 ms avg, 306.0 qps
+```
+
+Almost all requests success except few! The istio-proxy does allow for some leeway.
+
+```bash
+Code 200 : 17 (85.0 %)
+Code 503 : 3 (15.0 %)
 ```

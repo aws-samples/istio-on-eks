@@ -77,7 +77,7 @@ virtualservice.networking.istio.io/catalogdetail configured
 Now, we can see there is a delay of 5 seconds while loading the Product Catalog application
 
 ```bash  
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ curl http://a91bc63ae1c4343a08c91a2ec487e62e-4d2c547dc8131129.elb.us-east-1.amazonaws.com/ -s -o /dev/null -w  "%{time_starttransfer}\n"
+curl http://a91bc63ae1c4343a08c91a2ec487e62e-4d2c547dc8131129.elb.us-east-1.amazonaws.com/ -s -o /dev/null -w  "%{time_starttransfer}\n"
 5.022975
 ```
 
@@ -96,14 +96,13 @@ virtualservice.networking.istio.io/productcatalog configured
 To test timeout functionality, install multitools 
 
 ```bash  
-# Multitools
 kubectl create deployment multitool --image=praqma/network-multitool -n workshop
 ```
 
 multitool pod has been deployed
 
 ```bash  
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ kubectl get pods -n workshop | grep multitool
+kubectl get pods -n workshop | grep multitool
 multitool-86d6d5c595-b2pdh        2/2     Running   0          8m13s
 ```
 then login to multitool pod and execute the command to see the timeout
@@ -123,6 +122,8 @@ Use 'kubectl describe pod/multitool-86d6d5c595-b2pdh -n workshop' to see all of 
 bash-5.1# curl http://productcatalog:5000/products/ -s -o /dev/null -w  "Time taken to start trasnfer: %{time_starttransfer}\n"
 Time taken to start trasnfer: 2.006628
 ```
+
+
 
 ### Retries:
 

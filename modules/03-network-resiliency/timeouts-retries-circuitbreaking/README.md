@@ -123,7 +123,7 @@ bash-5.1# curl http://productcatalog:5000/products/ -s -o /dev/null -w  "Time ta
 Time taken to start trasnfer: 2.006628
 ```
 
-![](../../images/01-kiali-console.png)
+![](../../images/03-timeouts.png)
 
 ### Retries:
 

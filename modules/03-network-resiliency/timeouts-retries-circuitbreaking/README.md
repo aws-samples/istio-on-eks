@@ -494,9 +494,30 @@ Uniform: false, Jitter: false, Catchup allowed: true
 IP addresses distribution:
 172.20.233.48:3000: 19
 Code 200 : 12 (40.0 %)
-### Code 503 : 18 (60.0 %)
+Code 503 : 18 (60.0 %)
 Response Header Sizes : count 30 avg 94.8 +/- 116.1 min 0 max 237 sum 2844
 Response Body/Total Sizes : count 30 avg 256 +/- 18.59 min 241 max 283 sum 7680
 All done 30 calls (plus 0 warmup) 3.914 ms avg, 596.6 qps
 ```
+Now only 40% of the requests succeeded and the rest 60% were trapped by circuit breaking as expected.
 
+```bash
+Code 200 : 12 (40.0 %)
+Code 503 : 18 (60.0 %)
+```
+
+### Cleanup for Circutibreaking
+
+To clean up the circuitbreaking and remove the services that were deployed, please run the following commands:
+
+```bash
+ kubectl apply -f setup-mesh-resources
+```
+output should be similar to:
+
+```bash
+destinationrule.networking.istio.io/catalogdetail unchanged
+virtualservice.networking.istio.io/catalogdetail configured
+virtualservice.networking.istio.io/frontend unchanged
+virtualservice.networking.istio.io/productcatalog configured
+```

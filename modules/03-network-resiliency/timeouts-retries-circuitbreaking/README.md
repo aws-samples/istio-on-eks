@@ -285,6 +285,7 @@ Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ kubectl 
 'x-envoy-attempt-count', '1' 
 
 ```
+![](../../../images/03-retries.png)
 
 ### Circuit Breaking
 

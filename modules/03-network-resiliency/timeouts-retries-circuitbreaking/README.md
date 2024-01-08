@@ -322,6 +322,7 @@ Install [fortio](https://github.com/fortio/fortio)
 ```bash 
 brew install fortio
 ```
+Now deploy fortio service and deployment
 
 ```bash 
 kubectl apply -f fortio.yaml

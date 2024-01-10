@@ -213,8 +213,7 @@ Now from within the `fortio` pod test out a single `curl` to the `catalogdetail`
 service:
 
 ```sh
-kubectl exec fortio -n workshop -c fortio /usr/bin/fortio -- \
-curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec fortio -n workshop -c fortio /usr/bin/fortio curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
 Output should be similar to below:

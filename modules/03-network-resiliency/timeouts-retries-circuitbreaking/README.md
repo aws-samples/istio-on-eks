@@ -2,6 +2,11 @@
 
 This sub-module will cover the network resiliency and testing features such as **Timeouts, Retries and Circuit Breaking** of Istio service-mesh on Amazon EKS. 
 
+Use the following links to quickly jump to the desired section:
+1. [Timeouts](#timeouts)
+2. [Retries](#retries)
+3. [Circuit-Breaking](#circuit-breaking)
+
 ## Prerequisites:
 1. [Module 1 - Getting Started](../01-getting-started/)
 2. [Install `istioctl` and add it to the $PATH](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/#install-hahahugoshortcode860s2hbhb)

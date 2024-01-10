@@ -1,11 +1,12 @@
-# Module 3 - Network Resilience
+# Network Resiliency - Timeouts/Retries/Circuit Breaking
 
-This module shows the Network resilience and testing features like Timeouts, Retries and Circuit breakers of Istio service-mesh on Amazon EKS. The module is split into subdirectories for these 3 specific use cases.
+This sub-module will cover the network resiliency and testing features such as **Timeouts, Retries and Circuit Breaking** of Istio service-mesh on Amazon EKS. 
 
 ## Prerequisites:
-- [Module 1 - Getting Started](../01-getting-started/)
+1. [Module 1 - Getting Started](../01-getting-started/)
+2. [Install `istioctl` and add it to the $PATH](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/#install-hahahugoshortcode860s2hbhb)
 
-Note: This module will build on the application resources deployed in 
+>Note: This module will build on the application resources deployed in 
 [Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
 
 ## Initial state setup
@@ -17,11 +18,9 @@ A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/d
 based on the `version` label of the destination pods. However, the initial [`VirtualService`](./setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
 subset configuration thereby leading to a uniform traffic spread across both subsets.
 
-### Deploy 
-
 ```bash
-# Change directory to the right folder
-cd ../03-network-resilience
+# This assumes that you are currently in "istio-on-eks/modules/01-getting-started" folder
+cd ../03-network-resiliency/timeouts-retries-circuitbreaking
 
 # Install the mesh resources
 kubectl apply -f ./setup-mesh-resources/
@@ -35,317 +34,182 @@ virtualservice.networking.istio.io/frontend created
 virtualservice.networking.istio.io/productcatalog created
 ```
 
-### Validate
+## Timeouts
 
-#### Istio Resources
+To test the timeout functionality we will make the following two changes:
+1. Add a `delay` of `5` seconds to the `catalogdetail` VirtualService
+2. Add a `timeout` of `2` seconds to the `productcatalog` VirtualService
 
-Run the following command to list all the Istio resources created.
+Since the `productcatalog` service calls the `catalogdetail` service and since 
+`catalogdetail` will take about `5` seconds to respond, we will get to see the 
+timeouts getting triggered.
 
-```bash
-kubectl get Gateway,VirtualService,DestinationRule -n workshop
-```
+### Testing 
 
-Output should be similar to:
-```bash
-NAME                                             AGE
-gateway.networking.istio.io/productapp-gateway   25m
+#### Testing Delays
 
-NAME                                                GATEWAYS                 HOSTS                AGE
-virtualservice.networking.istio.io/catalogdetail                             ["catalogdetail"]    48s
-virtualservice.networking.istio.io/frontend                                  ["frontend"]         48s
-virtualservice.networking.istio.io/productapp       ["productapp-gateway"]   ["*"]                25m
-virtualservice.networking.istio.io/productcatalog                            ["productcatalog"]   48s
-
-NAME                                                HOST                                       AGE
-destinationrule.networking.istio.io/catalogdetail   catalogdetail.workshop.svc.cluster.local   48s
-```
-
-### Timeouts
-
-In this step, first add a delay of 5secs to catalogdetail virtual service.
+Apply the delay configuration to the `catalogdetail` VirtualService
 
 ```bash
-kubectl apply -f catalogdetail-delay-virtualservice.yaml 
+kubectl apply -f ./timeouts/catalogdetail-virtualservice.yaml
 ```
 
-output should be similar to:
-
-```bash                                                                 
-virtualservice.networking.istio.io/catalogdetail configured
-```
-
-Now, we can see there is a delay of 5 seconds while loading the Product Catalog application
+Test for the delay in accessing the application:
 
 ```bash  
-curl http://a91bc63ae1c4343a08c91a2ec487e62e-4d2c547dc8131129.elb.us-east-1.amazonaws.com/ -s -o /dev/null -w  "%{time_starttransfer}\n"
+export ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+
+curl $ISTIO_INGRESS_URL -s -o /dev/null -w  "%{time_starttransfer}\n"
+```
+If the delay configuration is applied correctly, the output should be similar to:
+```sh
 5.022975
 ```
 
-Now, add a timeout of 2 seconds for productcatalog virtual service.
+#### Testing Timeouts
+
+Apply the timeout configuration to the `productcatalog` VirtualService
 
 ```bash
-kubectl apply -f productcatalog-timeout-virtualservice.yaml 
+kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
 ```
 
-output should be similar to:
-
-```bash                                                                 
-virtualservice.networking.istio.io/productcatalog configured
-```
-
-To test timeout functionality, install multitools 
+Test the timeout by running a `curl` command against the `productcatalog` service 
+from within the mesh.
 
 ```bash  
-kubectl create deployment multitool --image=praqma/network-multitool -n workshop
-```
+# Create a multitool pod just to be able to use curl from within the mesh
+kubectl run multitool --image=praqma/network-multitool -n workshop
 
-multitool pod has been deployed
+# Wait for the pod to be created
+sleep 5
 
-```bash  
-kubectl get pods -n workshop | grep multitool
-multitool-86d6d5c595-b2pdh        2/2     Running   0          8m13s
+kubectl exec -n workshop -t multitool -- \
+curl http://productcatalog:5000/products/ -s -o /dev/null \
+-w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
-then login to multitool pod and execute the command to see the timeout
-
-```bash  
-kubectl exec -n workshop -it multitool-86d6d5c595-b2pdh /bin/bash
-curl http://productcatalog:5000/products/ -s -o /dev/null -w  "Time taken to start trasnfer: %{time_starttransfer}\n"
-```
-output should be similar to:
+Output should be similar to:
 
 ```bash 
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ kubectl exec -n workshop -it multitool-86d6d5c595-b2pdh /bin/bash
-kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
-Defaulting container name to network-multitool.
-Use 'kubectl describe pod/multitool-86d6d5c595-b2pdh -n workshop' to see all of the containers in this pod.
-
-bash-5.1# curl http://productcatalog:5000/products/ -s -o /dev/null -w  "Time taken to start trasnfer: %{time_starttransfer}\n"
-Time taken to start trasnfer: 2.006628
+pod/multitool created
+Time taken to start transfer: 2.006628
 ```
 
 ![](../../../images/03-timeouts.png)
 
-### Cleanup for timeouts
-To clean up the timeouts and remove the services that were deployed, please run the following commands:
+### Reset the environment
 
-```bash
- kubectl apply -f setup-mesh-resources
-```
-output should be similar to:
+Delete the `multitool` pod with the command shown below and then run the same 
+steps as in the [Initial state setup](#initial-state-setup) to reset the 
+environment for testing the remaining features.
 
-```bash
-destinationrule.networking.istio.io/catalogdetail unchanged
-virtualservice.networking.istio.io/catalogdetail configured
-virtualservice.networking.istio.io/frontend unchanged
-virtualservice.networking.istio.io/productcatalog configured
+```sh
+kubectl delete po multitool -n workshop
 ```
 
+## Retries:
 
-### Retries:
+To test the timeout functionality we will make the following changes:
+1. Add configuration for `retries` with `2` attempts to the `productcatalog` 
+VirtualService
+2. Edit the `productcatalog` deployment to run a container that does nothing other 
+than to sleep for 1 hour. To achieve this we make the following changes to the 
+deployment:
+   * Change the `readinessProbe` to run a simple command `echo hello`. Since the  
+   command always succeeds, the container would immediately be ready.
+   * Change the `livenessProbe` to run a simple command `echo hello`.  Since the  
+   command always succeeds, the container is immediately marked to be live.
+   * Add a `command` to the container that will cause the main process to sleep
+   for 1 hour
 
-For Retries, first execute the catalogdetail-delay-virtualservice.yaml
+To apply these changes, run the following command:
 
 ```bash 
-kubectl apply -f catalogdetail-delay-virtualservice.yaml
+kubectl apply -f ./retries/
+
+kubectl get deployment -n workshop productcatalog -o json |
+jq '.spec.template.spec.containers[0].readinessProbe={exec:{command:["sh","-c","echo hello"]}}
+| .spec.template.spec.containers[0].livenessProbe={exec:{command:["sh","-c","echo hello"]}}
+| .spec.template.spec.containers[0]+={command:["sh","-c","sleep 1h"]}' |
+kubectl apply --force=true -f -
 ```
 
-output should be similar to:
+### Testing 
 
-```bash
-virtualservice.networking.istio.io/catalogdetail configured
-```
-
-Let's add retries of 2 for productcatalog-retries-virtualservice.yaml 
-
-```bash 
-kubectl apply -f productcatalog-retries-virtualservice.yaml
-```
-
-output should be similar to:
-
-```bash
-virtualservice.networking.istio.io/productcatalog configured
-```
-
-To check the retries functionality, install istioctl
-
-```bash
-curl -sL https://istio.io/downloadIstioctl | sh -
-export PATH=$HOME/.istioctl/bin:$PATH
-istioctl x precheck
-```
-output should be similar to below
-
-```bash
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ curl -sL https://istio.io/downloadIstioctl | sh -
-
-Downloading istioctl-1.19.3 from https://github.com/istio/istio/releases/download/1.19.3/istioctl-1.19.3-linux-amd64.tar.gz ...
-istioctl-1.19.3-linux-amd64.tar.gz download complete!
-
-Add the istioctl to your path with:
-  export PATH=$HOME/.istioctl/bin:$PATH 
-
-Begin the Istio pre-installation check by running:
-         istioctl x precheck 
-
-Need more information? Visit https://istio.io/docs/reference/commands/istioctl/
-
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ export PATH=$HOME/.istioctl/bin:$PATH 
-
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ istioctl x precheck 
-Info [IST0136] (Pod istio-ingress/istio-ingress-5bc6c5b8f4-n6jw6) Annotation "inject.istio.io/templates" is part of an alpha-phase feature and may be incompletely supported.
-Info [IST0136] (Pod istio-ingress/istio-ingress-5bc6c5b8f4-n6jw6) Annotation "proxy.istio.io/overrides" is part of an alpha-phase feature and may be incompletely supported.
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $
-```
-
-Debug mode is enabled for productcatalog as below
+Enable `debug` mode for the envoy logs of `productcatalog` service with the 
+command below:
 
 ```bash
 istioctl pc log --level debug -n workshop deploy/productcatalog
 ```
-output should be similar to below
 
-```bash
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ istioctl pc log --level debug -n workshop deploy/productcatalog
-productcatalog-5b79cb8dbb-r8ztn.workshop:
-active loggers:
-  admin: debug
-  alternate_protocols_cache: debug
-  aws: debug
-  assert: debug
-  backtrace: debug
-  cache_filter: debug
-  client: debug
-  config: debug
-  connection: debug
-  conn_handler: debug
-  decompression: debug
-  dns: debug
-  dubbo: debug
-  envoy_bug: debug
-  ext_authz: debug
-  ext_proc: debug
-  rocketmq: debug
-  file: debug
-  filter: debug
-  forward_proxy: debug
-  grpc: debug
-  happy_eyeballs: debug
-  hc: debug
-  health_checker: debug
-  http: debug
-  http2: debug
-  hystrix: debug
-  init: debug
-  io: debug
-  jwt: debug
-  kafka: debug
-  key_value_store: debug
-  lua: debug
-  main: debug
-  matcher: debug
-  misc: debug
-  mongo: debug
-  multi_connection: debug
-  oauth2: debug
-  quic: debug
-  quic_stream: debug
-  pool: debug
-  rate_limit_quota: debug
-  rbac: debug
-  rds: debug
-  redis: debug
-  router: debug
-  runtime: debug
-  stats: debug
-  secret: debug
-  tap: debug
-  testing: debug
-  thrift: debug
-  tracing: debug
-  upstream: debug
-  udp: debug
-  wasm: debug
-  websocket: debug
-  golang: debug
-```
+#### Testing Retries
 
 Refresh the browser and look at the logs to see the number of retries 
 
 ```bash
-kubectl logs -f -n workshop -l app=productcatalog -c istio-proxy | grep "x-envoy-attempt-count"
+kubectl -n workshop logs -l app=productcatalog -c istio-proxy -f | 
+grep "x-envoy-attempt-count"
 ```
 
-Output should be similar to below as there are 2 retries (in addition to the first first request)
+Output should be similar: 
 
 ```bash 
-Admin:~/environment/istio-on-eks/modules/03-network-resiliency (main) $ kubectl logs -f -n workshop -l app=productcatalog -c istio-proxy | grep "x-envoy-attempt-count"
 'x-envoy-attempt-count', '1'
 'x-envoy-attempt-count', '1'
-'x-envoy-attempt-count', '1' 
-
+'x-envoy-attempt-count', '2'
+'x-envoy-attempt-count', '2'
+'x-envoy-attempt-count', '3'
+'x-envoy-attempt-count', '3'
 ```
+
+We see `3` attempt counts as, in addition to `2` retries, it also includes the 
+very first attempt at connecting to the service.
+
 ![](../../../images/03-retries.png)
 
-### Cleanup for retries
-To clean up the retries and remove the services that were deployed, please run the following commands:
+### Reset the environment
 
-```bash
- kubectl apply -f setup-mesh-resources
-```
-output should be similar to:
+Reset the `productcatalog` deployment with the following instructions and then 
+run the same steps as in the [Initial state setup](#initial-state-setup) to reset 
+the environment for testing the remaining features.
 
-```bash
-destinationrule.networking.istio.io/catalogdetail unchanged
-virtualservice.networking.istio.io/catalogdetail configured
-virtualservice.networking.istio.io/frontend unchanged
-virtualservice.networking.istio.io/productcatalog configured
+```sh 
+kubectl delete deployment -n workshop productcatalog
+helm upgrade mesh-basic ../../01-getting-started/ -n workshop
 ```
 
+## Circuit Breaking
 
-### Circuit Breaking
-
-Create a destination rule to apply circuit breaking settings when calling productcatalog service.
+To test the circuit-breaker functionality we will make the following changes:
+1. Modify the existing `catalogdetail` destination rule to apply circuit breaking
+configuration
 
 ```bash 
-kubectl apply -f catalog-destinationrule-circuitbreaker.yaml
+kubectl apply -f ./circuitbreaking/
 ```
 
-Output should be similar to below
+### Testing
 
-```bash 
-destinationrule.networking.istio.io/catalogdetail created
-```
+To be able to test the circuit breaker feature we will use an application called 
+[`fortio`](https://github.com/fortio/fortio)
 
-Install [fortio](https://github.com/fortio/fortio)
+Run the command below to create a `fortio` pod in the workshop namespace:
 
-```bash 
-brew install fortio
-```
-Now deploy fortio service and deployment
-
-```bash 
-kubectl apply -f fortio.yaml
-```
-
-Output should be similar to below
-
-```bash 
-service/fortio created
-deployment.apps/fortio-deploy created
+```sh
+kubectl run fortio --image=fortio/fortio:latest_release -n workshop
 ```
 
 Log in to the client pod and use the fortio tool to call prodcutcatalog. Pass in curl to indicate that you just want to make one call:
 
 ```bash
-export FORTIO_POD=$(kubectl get pods -n workshop -l app=fortio -o 'jsonpath={.items[0].metadata.name}')
-kubectl exec "$FORTIO_POD" -c fortio -n workshop /usr/bin/fortio curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec fortio -n workshop -c fortio /usr/bin/fortio -- \
+curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
 Output should be similar to below:
 
-```bash
-kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+```sh
 {"ts":1704746733.172561,"level":"info","r":1,"file":"scli.go","line":123,"msg":"Starting","command":"Φορτίο","version":"1.60.3 h1:adR0uf/69M5xxKaMLAautVf9FIVkEpMwuEWyMaaSnI0= go1.20.10 amd64 linux"}
 HTTP/1.1 200 OK
 x-powered-by: Express
@@ -361,10 +225,12 @@ server: envoy
 
 ### Tripping the circuit breaker
 
-Call the catalogdetail service with two concurrent connections (-c 2) and send 20 requests (-n 20):
+We can start testing the circuit breaking functionality by generating traffic to
+the `catalogdetail` service with two concurrent connections (-c 2) and by sending
+a total of 20 requests (-n 20):
 
 ```bash
-kubectl exec "$FORTIO_POD" -c fortio -n workshop -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
 Output should be similar to below:
 
@@ -419,17 +285,19 @@ Response Body/Total Sizes : count 20 avg 268.9 +/- 16.57 min 241 max 283 sum 537
 All done 20 calls (plus 0 warmup) 6.391 ms avg, 306.0 qps
 ```
 
-Almost all requests success except few! The istio-proxy does allow for some leeway.
+We can notice that most requests have been successful except for few. The istio-proxy 
+does allow for some leeway.
 
 ```bash
 Code 200 : 17 (85.0 %)
 Code 503 : 3 (15.0 %)
 ```
 
-Increase the number of concurrent connections up to 3:
+Now rerun the same command by increasing the number of concurrent connections to 3
+and number of calls to 30
 
 ```bash
-kubectl exec "$FORTIO_POD" -c fortio -n workshop -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
 Output should be similar to below:
 
@@ -500,25 +368,22 @@ Response Header Sizes : count 30 avg 94.8 +/- 116.1 min 0 max 237 sum 2844
 Response Body/Total Sizes : count 30 avg 256 +/- 18.59 min 241 max 283 sum 7680
 All done 30 calls (plus 0 warmup) 3.914 ms avg, 596.6 qps
 ```
-Now only 40% of the requests succeeded and the rest 60% were trapped by circuit breaking as expected.
+As we increase the traffic towards the `catalogdetail` microservice we start to 
+notice the circuit breaking functionality kicking in. We now notice that  only 
+40% of the requests succeeded and the rest 60%, as expected, were trapped 
+by circuit breaker.
 
 ```bash
 Code 200 : 12 (40.0 %)
 Code 503 : 18 (60.0 %)
 ```
 
-### Cleanup for Circutibreaking
+### Reset the environment
 
-To clean up the circuitbreaking and remove the services that were deployed, please run the following commands:
+Delete the `fortio` pod using the following command and then run the same steps 
+as in the [Initial state setup](#initial-state-setup) to reset the environment 
+one last time.
 
-```bash
- kubectl apply -f setup-mesh-resources
-```
-output should be similar to:
-
-```bash
-destinationrule.networking.istio.io/catalogdetail unchanged
-virtualservice.networking.istio.io/catalogdetail configured
-virtualservice.networking.istio.io/frontend unchanged
-virtualservice.networking.istio.io/productcatalog configured
+```sh 
+kubectl delete pod fortio -n workshop
 ```

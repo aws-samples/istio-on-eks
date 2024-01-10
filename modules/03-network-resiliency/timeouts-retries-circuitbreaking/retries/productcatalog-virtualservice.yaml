@@ -1,4 +1,4 @@
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: productcatalog
@@ -10,12 +10,10 @@ spec:
   - match:
     - uri:
         prefix: /
+    retries:
+      attempts: 2
     route:
     - destination:
         host: productcatalog
         port:
           number: 5000
-    timeout: 2s
-    retries:
-      attempts: 2
-      perTryTimeout: 0.5s

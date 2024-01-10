@@ -147,6 +147,7 @@ Enable `debug` mode for the envoy logs of `productcatalog` service with the
 command below:
 
 ```sh
+cd retries
 istioctl pc log --level debug -n workshop deploy/productcatalog
 ```
 

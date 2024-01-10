@@ -116,7 +116,7 @@ kubectl delete po multitool -n workshop
 
 ## Retries:
 
-To test the timeout functionality we will make the following changes:
+To test the retries functionality we will make the following changes:
 1. Add configuration for `retries` with `2` attempts to the `productcatalog` 
 VirtualService
 2. Edit the `productcatalog` deployment to run a container that does nothing other 

@@ -184,7 +184,7 @@ the environment for testing the remaining features.
 
 ```sh 
 kubectl delete deployment -n workshop productcatalog
-helm upgrade mesh-basic ../../01-getting-started/ -n workshop
+helm upgrade mesh-basic ../../../01-getting-started/ -n workshop
 ```
 
 ## Circuit Breaking

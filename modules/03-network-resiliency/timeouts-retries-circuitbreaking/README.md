@@ -32,7 +32,8 @@ kubectl apply -f ./setup-mesh-resources/
 ```
 
 Output should be similar to:
-```bash
+
+```
 destinationrule.networking.istio.io/catalogdetail created
 virtualservice.networking.istio.io/catalogdetail created
 virtualservice.networking.istio.io/frontend created
@@ -55,19 +56,20 @@ timeouts getting triggered.
 
 Apply the delay configuration to the `catalogdetail` VirtualService
 
-```bash
+```sh
 kubectl apply -f ./timeouts/catalogdetail-virtualservice.yaml
 ```
 
 Test for the delay in accessing the application:
 
-```bash  
+```sh  
 export ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
 
 curl $ISTIO_INGRESS_URL -s -o /dev/null -w  "%{time_starttransfer}\n"
 ```
 If the delay configuration is applied correctly, the output should be similar to:
-```sh
+
+```
 5.022975
 ```
 
@@ -75,14 +77,14 @@ If the delay configuration is applied correctly, the output should be similar to
 
 Apply the timeout configuration to the `productcatalog` VirtualService
 
-```bash
+```sh
 kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
 ```
 
 Test the timeout by running a `curl` command against the `productcatalog` service 
 from within the mesh.
 
-```bash  
+```sh  
 # Create a multitool pod just to be able to use curl from within the mesh
 kubectl run multitool --image=praqma/network-multitool -n workshop
 
@@ -95,7 +97,7 @@ curl http://productcatalog:5000/products/ -s -o /dev/null \
 ```
 Output should be similar to:
 
-```bash 
+```
 pod/multitool created
 Time taken to start transfer: 2.006628
 ```
@@ -129,7 +131,7 @@ deployment:
 
 To apply these changes, run the following command:
 
-```bash 
+```sh 
 kubectl apply -f ./retries/
 
 kubectl get deployment -n workshop productcatalog -o json |
@@ -144,7 +146,7 @@ kubectl apply --force=true -f -
 Enable `debug` mode for the envoy logs of `productcatalog` service with the 
 command below:
 
-```bash
+```sh
 istioctl pc log --level debug -n workshop deploy/productcatalog
 ```
 
@@ -152,14 +154,14 @@ istioctl pc log --level debug -n workshop deploy/productcatalog
 
 Refresh the browser and look at the logs to see the number of retries 
 
-```bash
+```sh
 kubectl -n workshop logs -l app=productcatalog -c istio-proxy -f | 
 grep "x-envoy-attempt-count"
 ```
 
 Output should be similar: 
 
-```bash 
+```sh 
 'x-envoy-attempt-count', '1'
 'x-envoy-attempt-count', '1'
 'x-envoy-attempt-count', '2'
@@ -190,14 +192,15 @@ To test the circuit-breaker functionality we will make the following changes:
 1. Modify the existing `catalogdetail` destination rule to apply circuit breaking
 configuration
 
-```bash 
+```sh
 kubectl apply -f ./circuitbreaking/
 ```
 
 ### Testing
 
 To be able to test the circuit breaker feature we will use an application called 
-[`fortio`](https://github.com/fortio/fortio)
+[`fortio`](https://github.com/fortio/fortio) and to do this we will run a pod 
+with a single container based on the `fortio` image.
 
 Run the command below to create a `fortio` pod in the workshop namespace:
 
@@ -205,16 +208,17 @@ Run the command below to create a `fortio` pod in the workshop namespace:
 kubectl run fortio --image=fortio/fortio:latest_release -n workshop
 ```
 
-Log in to the client pod and use the fortio tool to call prodcutcatalog. Pass in curl to indicate that you just want to make one call:
+Now from within the `fortio` pod test out a single `curl` to the `catalogdetail` 
+service:
 
-```bash
+```sh
 kubectl exec fortio -n workshop -c fortio /usr/bin/fortio -- \
 curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
 Output should be similar to below:
 
-```sh
+```
 {"ts":1704746733.172561,"level":"info","r":1,"file":"scli.go","line":123,"msg":"Starting","command":"Φορτίο","version":"1.60.3 h1:adR0uf/69M5xxKaMLAautVf9FIVkEpMwuEWyMaaSnI0= go1.20.10 amd64 linux"}
 HTTP/1.1 200 OK
 x-powered-by: Express
@@ -234,12 +238,14 @@ We can start testing the circuit breaking functionality by generating traffic to
 the `catalogdetail` service with two concurrent connections (-c 2) and by sending
 a total of 20 requests (-n 20):
 
-```bash
-kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+```sh
+kubectl exec fortio -n workshop -c fortio -- \
+/usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning \
+http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
 Output should be similar to below:
 
-```bash
+```
 {"ts":1704746942.859803,"level":"info","r":1,"file":"logger.go","line":254,"msg":"Log level is now 3 Warning (was 2 Info)"}
 Fortio 1.60.3 running at 0 queries per second, 2->2 procs, for 20 calls: http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 Starting at max qps with 2 thread(s) [gomax 2] for exactly 20 calls (10 per thread + 0)
@@ -293,7 +299,7 @@ All done 20 calls (plus 0 warmup) 6.391 ms avg, 306.0 qps
 We can notice that most requests have been successful except for few. The istio-proxy 
 does allow for some leeway.
 
-```bash
+```
 Code 200 : 17 (85.0 %)
 Code 503 : 3 (15.0 %)
 ```
@@ -301,12 +307,14 @@ Code 503 : 3 (15.0 %)
 Now rerun the same command by increasing the number of concurrent connections to 3
 and number of calls to 30
 
-```bash
-kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+```sh
+kubectl exec fortio -n workshop -c fortio -- \
+/usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning \
+http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ``` 
 Output should be similar to below:
 
-```bash
+```
 {"ts":1704747392.512409,"level":"info","r":1,"file":"logger.go","line":254,"msg":"Log level is now 3 Warning (was 2 Info)"}
 Fortio 1.60.3 running at 0 queries per second, 2->2 procs, for 30 calls: http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 Starting at max qps with 3 thread(s) [gomax 2] for exactly 30 calls (10 per thread + 0)
@@ -378,7 +386,7 @@ notice the circuit breaking functionality kicking in. We now notice that  only
 40% of the requests succeeded and the rest 60%, as expected, were trapped 
 by circuit breaker.
 
-```bash
+```
 Code 200 : 12 (40.0 %)
 Code 503 : 18 (60.0 %)
 ```

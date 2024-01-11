@@ -396,6 +396,38 @@ by circuit breaker.
 Code 200 : 12 (40.0 %)
 Code 503 : 18 (60.0 %)
 ```
+Now, query the isto-proxy to see the stats of the requests flagged for circuitbreaking.
+
+```sh
+kubectl exec fortio -n workshop -c istio-proxy -- pilot-agent request GET stats | grep catalogdetail | grep pending
+```
+
+```
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.remaining_pending: 1
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.rq_pending_open: 0
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.circuit_breakers.high.rq_pending_open: 0
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_active: 0
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_failure_eject: 0
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_overflow: 0
+cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_total: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.remaining_pending: 1
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.rq_pending_open: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.circuit_breakers.high.rq_pending_open: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_active: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_failure_eject: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_overflow: 0
+cluster.outbound|3000|v2|catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_total: 0
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.remaining_pending: 1
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.rq_pending_open: 0
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.circuit_breakers.high.rq_pending_open: 0
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_active: 0
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_failure_eject: 0
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_overflow: 17
+cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_total: 34
+```
+
+upstream_rq_pending_overflow is having value as 17, which means 17 calls so far have been flagged for circuitbreaking.  
+
 
 ### Reset the environment
 

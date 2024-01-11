@@ -402,6 +402,7 @@ Now, query the isto-proxy to see the stats of the requests flagged for circuitbr
 kubectl exec fortio -n workshop -c istio-proxy -- pilot-agent request GET stats | grep catalogdetail | grep pending
 ```
 
+The output should be similar to:
 ```
 cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.remaining_pending: 1
 cluster.outbound|3000|v1|catalogdetail.workshop.svc.cluster.local.circuit_breakers.default.rq_pending_open: 0
@@ -426,8 +427,9 @@ cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pend
 cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pending_total: 34
 ```
 
-upstream_rq_pending_overflow is having value as 17, which means 17 calls so far have been flagged for circuitbreaking.  
-
+As can be seen in the the output above `upstream_rq_pending_overflow` has a value 
+of 17, which means 17 calls so far have been flagged for circuitbreaking proving 
+that our circuit-breaker configuration to the `catalogdetail` DestinationRule worked.
 
 ### Reset the environment
 

@@ -111,7 +111,7 @@ steps as in the [Initial state setup](#initial-state-setup) to reset the
 environment for testing the remaining features.
 
 ```sh
-kubectl delete po multitool -n workshop
+kubectl delete pod multitool -n workshop
 ```
 
 ## Retries:
@@ -147,7 +147,6 @@ Enable `debug` mode for the envoy logs of `productcatalog` service with the
 command below:
 
 ```sh
-cd retries
 istioctl pc log --level debug -n workshop deploy/productcatalog
 ```
 
@@ -162,7 +161,7 @@ grep "x-envoy-attempt-count"
 
 Output should be similar: 
 
-```sh 
+``` 
 'x-envoy-attempt-count', '1'
 'x-envoy-attempt-count', '1'
 'x-envoy-attempt-count', '2'
@@ -184,7 +183,7 @@ the environment for testing the remaining features.
 
 ```sh 
 kubectl delete deployment -n workshop productcatalog
-helm upgrade mesh-basic ../../../01-getting-started/ -n workshop
+helm upgrade mesh-basic ../../01-getting-started/ -n workshop
 ```
 
 ## Circuit Breaking
@@ -206,14 +205,21 @@ with a single container based on the `fortio` image.
 Run the command below to create a `fortio` pod in the workshop namespace:
 
 ```sh
-kubectl run fortio --image=fortio/fortio:latest_release -n workshop
+kubectl run fortio --image=fortio/fortio:latest_release -n workshop --annotations='proxy.istio.io/config=proxyStatsMatcher:
+  inclusionPrefixes:
+  - "cluster.outbound"
+  - "cluster_manager"
+  - "listener_manager"
+  - "server"
+  - "cluster.xds-grpc"'
 ```
 
 Now from within the `fortio` pod test out a single `curl` to the `catalogdetail` 
 service:
 
 ```sh
-kubectl exec fortio -n workshop -c fortio /usr/bin/fortio curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
+kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio \
+curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
 Output should be similar to below:

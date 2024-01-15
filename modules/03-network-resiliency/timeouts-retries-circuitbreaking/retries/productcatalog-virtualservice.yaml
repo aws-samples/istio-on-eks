@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: productcatalog
+  namespace: workshop
+spec:
+  hosts:
+  - productcatalog
+  http:
+  - match:
+    - uri:
+        prefix: /
+    retries:
+      attempts: 2
+    route:
+    - destination:
+        host: productcatalog
+        port:
+          number: 5000

@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: catalogdetail
+  namespace: workshop
+spec:
+  hosts:
+  - catalogdetail
+  http:
+  - route:
+    - destination:
+        host: catalogdetail
+        port:
+          number: 3000

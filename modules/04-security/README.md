@@ -3,10 +3,11 @@
 This module shows security related capabilities of Istio service-mesh on Amazon EKS. The module is split
 into subdirectories for different security use cases.
 
-  0. [Initial state setup](#initial-state-setup)
-  1. [Peer authentication](#peer-authentication)
-  2. [Request authentication](#request-authentication)
-  3. [OPA external authorization](#opa-external-authorization)
+  0. [Prerequisites](#prerequisites)
+  1. [Initial state setup](#initial-state-setup)
+  2. [Peer authentication](#peer-authentication)
+  3. [Request authentication](#request-authentication)
+  4. [OPA external authorization](#opa-external-authorization)
 
 ## Prerequisites:
 
@@ -16,6 +17,8 @@ into subdirectories for different security use cases.
 [Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
 
 ## Initial state setup
+
+**Note::** Ensure [Prerequisites](#prerequisites) are met before proceeding.
 
 In this step we add the Istio mesh resources to wrap the `frontend`, `productcatalog` and
 `catalogdetail` services.

@@ -803,13 +803,16 @@ Verify that the decision log shows a log entry with a `false` result matching th
 HTTP request header.
 
 ```bash
-kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
+kubectl logs deployment/frontend -c opa-istio -n workshop \
+  | grep "\"x-req-id\":\"$REQ_ID\"" \
+  | grep -o "\"result\":false"
 ```
 
-The decision log output should have a matching entry showing `"result":false` like below.
+The output should show a matching entry like below.
+The full decision log event JSON line can be inspected by removing the second `grep` command above.
 
 ```
-{"decision_id":"...",...,"result":false,...}
+"result":false
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
@@ -831,13 +834,16 @@ Verify that the decision log shows a log entry with a `true` result matching the
 HTTP request header.
 
 ```bash
-kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
+kubectl logs deployment/frontend -c opa-istio -n workshop \
+  | grep "\"x-req-id\":\"$REQ_ID\"" \
+  | grep -o "\"result\":true"
 ```
 
-The decision log output should have a matching entry showing `"result":true` like below.
+The output should show a matching entry like below.
+The full matching decision log event JSON line can be inspected by removing the second `grep` command above.
 
 ```
-{"decision_id":"...",...,"result":true,...}
+"result":true
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
@@ -859,13 +865,16 @@ Verify that the decision log shows a log entry with a `true` result matching the
 HTTP request header.
 
 ```bash
-kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
+kubectl logs deployment/frontend -c opa-istio -n workshop \
+  | grep "\"x-req-id\":\"$REQ_ID\"" \
+  | grep -o "\"result\":true"
 ```
 
-The decision log output should have a matching entry showing `"result":true` like below.
+The output should show a matching entry like below.
+The full matching decision log event JSON line can be inspected by removing the second `grep` command above.
 
 ```
-{"decision_id":"...",...,"result":true,...}
+"result":true
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
@@ -887,13 +896,16 @@ Verify that the decision log shows a log entry with a `false` result matching th
 HTTP request header.
 
 ```bash
-kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
+kubectl logs deployment/frontend -c opa-istio -n workshop \
+  | grep "\"x-req-id\":\"$REQ_ID\"" \
+  | grep -o "\"result\":false"
 ```
 
-The decision log output should have a matching entry showing `"result":false` like below.
+The output should show a matching entry like below.
+The full matching decision log event JSON line can be inspected by removing the second `grep` command above.
 
 ```
-{"decision_id":"...",...,"result":false,...}
+"result":false
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.
@@ -915,13 +927,16 @@ Verify that the decision log shows a log entry with a `true` result matching the
 HTTP request header.
 
 ```bash
-kubectl logs deployment/frontend -c opa-istio -n workshop | grep "\"x-req-id\":\"$REQ_ID\""
+kubectl logs deployment/frontend -c opa-istio -n workshop \
+  | grep "\"x-req-id\":\"$REQ_ID\"" \
+  | grep -o "\"result\":true"
 ```
 
-The decision log output should have a matching entry showing `"result":true` like below.
+The output should show a matching entry like below.
+The full matching decision log event JSON line can be inspected by removing the second `grep` command above.
 
 ```
-{"decision_id":"...",...,"result":true,...}
+"result":true
 ```
 
 It is possible that the log entries may get rotated out as newer requests keep flowing in.

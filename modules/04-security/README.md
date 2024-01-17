@@ -192,7 +192,7 @@ spec:
         condition: MustNotExist
     assign:
       value:
-        image: openpolicyagent/opa:latest-istio
+        image: openpolicyagent/opa:0.60.0-istio-static
         name: opa-istio
         args:
           - run
@@ -643,7 +643,7 @@ docker run \
   --name opa-istio \
   -v ./opa-external-authorization/:/policy \
   --rm \
-  openpolicyagent/opa:latest-istio \
+  openpolicyagent/opa:0.60.0-istio-static \
   test /policy/policy_test.rego /policy/policy.rego
 ```
 

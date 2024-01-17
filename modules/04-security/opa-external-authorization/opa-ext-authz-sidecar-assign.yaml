@@ -22,7 +22,7 @@ spec:
         condition: MustNotExist
     assign:
       value:
-        image: openpolicyagent/opa:latest-istio
+        image: openpolicyagent/opa:0.60.0-istio-static
         name: opa-istio
         args:
           - run

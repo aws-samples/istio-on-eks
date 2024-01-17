@@ -49,7 +49,7 @@ Apply Local Rate Limiting to the `productcatalog` Service
 kubectl apply -f ratelimit-manifests/local-ratelimit.yaml
 ```
 
-Looking into the contents of the file [local-ratelimit.yaml](./local-ratelimit.yaml)
+Looking into the contents of the file [local-ratelimit.yaml](ratelimit-manifests/local-ratelimit.yaml)
 
 1. The **HTTP_FILTER** patch inserts the `envoy.filters.http.local_ratelimit` [local envoy filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit) into the HTTP connection manager filter chain. 
 2. The local rate limit filter’s [token bucket](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/local_ratelimit/v3/local_rate_limit.proto#envoy-v3-api-field-extensions-filters-http-local-ratelimit-v3-localratelimit-token-bucket) is configured to allow **10 requests/min**. 

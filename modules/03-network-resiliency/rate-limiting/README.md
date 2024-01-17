@@ -1,11 +1,18 @@
-# Module 3 - Rate Limiting
-This module shows the rate limiting capabilities of Istio service-mesh on Amazon EKS.
+# Network Resiliency -  Rate Limiting
+This sub-module will cover the network resiliency feature such as rate limiting 
+of Istio service-mesh on Amazon EKS.
+
+Use the following links to quickly jump to the desired section:
+1. [Initial state setup](#initial-state-setup)
+2. [Local Rate Limiting](#local-rate-limiting)
+3. [Global Rate Limiting](#global-rate-limiting)
+4. [Reset the environment](#reset-the-environment)
 
 ## Prerequisites:
 
 - [Module 1 - Getting Started](../01-getting-started/)
 
-Note: This module will build on the application resources deployed in [Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
+> **Note:** This module will build on the application resources deployed in [Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
 
 ## Initial state setup
 
@@ -16,11 +23,10 @@ A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/d
 based on the `version` label of the destination pods. However, the initial [`VirtualService`](./setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
 subset configuration thereby leading to a uniform traffic spread across both subsets.
 
-### Deploy 
 
-```bash
-# Change directory to the right folder
-cd ../03-rate-limiting
+```sh
+# This assumes that you are currently in "istio-on-eks/modules/01-getting-started" folder
+cd ../03-network-resiliency/rate-limiting
 
 # Install the mesh resources
 kubectl apply -f ./setup-mesh-resources/
@@ -28,112 +34,37 @@ kubectl apply -f ./setup-mesh-resources/
 
 Output should be similar to:
 
-```bash
+```sh
 destinationrule.networking.istio.io/catalogdetail created
 virtualservice.networking.istio.io/catalogdetail created
 virtualservice.networking.istio.io/frontend created
 virtualservice.networking.istio.io/productcatalog created
 ```
 
-### Validate
-
-#### Istio Resources
-
-Run the following command to list all the Istio resources created.
-
-```bash
-kubectl get Gateway,VirtualService,DestinationRule -n workshop
-```
-
-Output should be similar to:
-
-```bash
-NAME                                             AGE
-gateway.networking.istio.io/productapp-gateway   25m
-
-NAME                                                GATEWAYS                 HOSTS                AGE
-virtualservice.networking.istio.io/catalogdetail                             ["catalogdetail"]    48s
-virtualservice.networking.istio.io/frontend                                  ["frontend"]         48s
-virtualservice.networking.istio.io/productapp       ["productapp-gateway"]   ["*"]                25m
-virtualservice.networking.istio.io/productcatalog                            ["productcatalog"]   48s
-
-NAME                                                HOST                                       AGE
-destinationrule.networking.istio.io/catalogdetail   catalogdetail.workshop.svc.cluster.local   48s
-```
-
 ## Local Rate Limiting
 
-#### Apply Local Rate Limiting to the ProdCatalog Service
+Apply Local Rate Limiting to the `productcatalog` Service
 
-```bash
-kubectl apply -f local-ratelimit.yaml
+```sh
+kubectl apply -f ratelimit-manifests/local-ratelimit.yaml
 ```
 
-The contents of the file are:
-
-```
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: filter-local-ratelimit-svc
-  namespace: istio-system
-spec:
-  workloadSelector:
-    labels:
-      app: productcatalog
-  configPatches:
-    - applyTo: HTTP_FILTER
-      match:
-        context: SIDECAR_INBOUND
-        listener:
-          filterChain:
-            filter:
-              name: "envoy.filters.network.http_connection_manager"
-      patch:
-        operation: INSERT_BEFORE
-        value:
-          name: envoy.filters.http.local_ratelimit
-          typed_config:
-            "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-            type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-            value:
-              stat_prefix: http_local_rate_limiter
-              enable_x_ratelimit_headers: DRAFT_VERSION_03
-              token_bucket:
-                max_tokens: 10
-                tokens_per_fill: 10
-                fill_interval: 60s
-              filter_enabled:
-                runtime_key: local_rate_limit_enabled
-                default_value:
-                  numerator: 100
-                  denominator: HUNDRED
-              filter_enforced:
-                runtime_key: local_rate_limit_enforced
-                default_value:
-                  numerator: 100
-                  denominator: HUNDRED
-              response_headers_to_add:
-                - append: false
-                  header:
-                    key: x-local-rate-limit
-                    value: 'true'
-```
+Looking into the contents of the file [local-ratelimit.yaml](./local-ratelimit.yaml)
 
 1. The **HTTP_FILTER** patch inserts the `envoy.filters.http.local_ratelimit` [local envoy filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit) into the HTTP connection manager filter chain. 
+2. The local rate limit filter’s [token bucket](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/local_ratelimit/v3/local_rate_limit.proto#envoy-v3-api-field-extensions-filters-http-local-ratelimit-v3-localratelimit-token-bucket) is configured to allow **10 requests/min**. 
+3. The filter is also configured to add an `x-local-rate-limit` response header to requests that are blocked.
 
-1. The local rate limit filter’s [token bucket](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/local_ratelimit/v3/local_rate_limit.proto#envoy-v3-api-field-extensions-filters-http-local-ratelimit-v3-localratelimit-token-bucket) is configured to allow 10 requests/min. 
+### Test
 
-1. The filter is also configured to add an **x-local-rate-limit** response header to requests that are blocked.
+To test the rate limiter in action, exec into a pod in the mesh, in our example 
+below it is the `catalogdetail` pod and send a bunch of requests to the `prodcatalog` service to trigger the rate limiter. 
 
-### Validate
+```sh
+POD_NAME=$(kubectl get pod -l app=catalogdetail -o jsonpath='{.items[0].metadata.name}' -n workshop)
 
-To test the rate limiter in action, exec into another pod and send a bunch of requests to the prodcatalog service to trigger the rate limiter. 
-
-```bash
-kubectl exec "$(kubectl get pod -l app=catalogdetail -o jsonpath='{.items[0].metadata.name}' -n workshop)" -c catalogdetail -n workshop --stdin --tty -- /bin/bash
- 
-for i in {1..20}; do curl -I http://productcatalog.workshop.svc.cluster.local:5000/products/; done
+kubectl exec $POD_NAME -n workshop -c catalogdetail -- \
+bash -c "for i in {1..20}; do curl -sI http://productcatalog:5000/products/; done" 
 ```
 
 Since the 20 requests are sent in less than a minute, after the first 10 requests are accepted by the service you’ll start seeing **HTTP 429** response codes from the service.
@@ -154,7 +85,7 @@ x-ratelimit-remaining: 9
 x-ratelimit-reset: 45
 ```
 
-While a rate limited requests will return the following output:
+While requests that are rate limited will return the following output:
 
 ```
 HTTP/1.1 429 Too Many Requests
@@ -169,240 +100,123 @@ server: envoy
 x-envoy-upstream-service-time: 0
 ```
 
-Similarly, if you run the same shell command without `-I` flag, you’ll start seeing **local_rate_limited** responses for the requests that are rate limited. And it will look something like this:
+Similarly, if you run the same command without `-I` flag, you will see the 
+responses as shown below: 
+
+For successful requests:
 
 ```
 {
     "products": {},
     "details": {
-        "version": "2",             <---------- Successful response to the request
+        "version": "2",
         "vendors": [
             "ABC.com, XYZ.com"
         ]
     }
-}
+}  
+```
+And for rate-limited requests:
 
-local_rate_limited                  <---------- Rate limited requests
+```
+local_rate_limited
 ```
 
 ## Global Rate Limiting
 
-#### Create ConfigMap for configuring the central rate limiting service
+### Setup Global Rate Limiting service
 
-```bash
-kubectl apply -f global-ratelimit-cm.yaml
+To be able to use the Global Rate Limit in our Istio service-mesh we need a global 
+rate limit service that implements Envoy’s rate limit service protocol. 
+
+1. Configuration for the Global Rate Limit service
+   * Configuration is captured in `ratelimit-config` **ConfigMap** in the file 
+   [global-ratelimit-config.yaml](ratelimit-manifests/global-ratelimit-config.yaml)
+   * As can be observed in the file, rate limit requests to the `/` path is set to
+    **5 requests/minute** and all other requests at **100 requests/minute**.
+2. Global Rate Limit service with Redis
+   *  File [global-ratelimit-service.yaml](ratelimit-manifests/global-ratelimit-service.yaml) 
+   has **Deployment** and **Service** definitions for 
+      * Central Rate Limit Service
+      * Redis
+   
+
+Apply the Global Rate Limiting configuration and deploy the dependent services 
+as shown below to the EKS cluster and Istio service-mesh.
+
+```sh
+kubectl apply -f ratelimit-manifests/global-ratelimit-config.yaml
+kubectl apply -f ratelimit-manifests/global-ratelimit-service.yaml
 ```
 
-The ConfigMap file looks like this:
+### Apply the Global Rate Limits
 
-```
-apiVersion: v1
-kind: ConfigMap
-metadata: 
-  name: ratelimit-config
-  namespace: workshop
-data: 
-  config.yaml: |
-    domain: prodcatalog-ratelimit
-    descriptors: 
-      - key: PATH
-        value: "/"
-        rate_limit:
-          unit: minute
-          requests_per_unit: 5
-      - key: PATH
-        rate_limit: 
-          unit: minute
-          requests_per_unit: 100
-```
+Applying global rate limits is done in two steps:
 
-1. The above ConfigMap has the configuration for setting up the rate limit requests to the `/` path at **5 requests/minute** and all other requests at **100 requests/minute**.
+1. Apply an EnvoyFilter to the ingressgateway to enable global rate limiting 
+using Envoy’s global rate limit filter.
 
-#### Deploy the Global Rate Limit service along with Redis
+   ```sh
+   kubectl apply -f ratelimit-manifests/filter-ratelimit.yaml
+   ```
+   Looking at the file [filter-ratelimit.yaml](ratelimit-manifests/filter-ratelimit.yaml)
+   * The  configuration inserts the `envoy.filters.http.ratelimit` [global envoy filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ratelimit/v3/rate_limit.proto#envoy-v3-api-msg-extensions-filters-http-ratelimit-v3-ratelimit) into the **HTTP_FILTER** chain.
+   * The `rate_limit_service` field specifies the external rate limit service, `outbound|8081||ratelimit.workshop.svc.cluster.local` in this case.
 
-```bash
-kubectl apply -f global-server-configuration.yaml
-```
+2. Apply another EnvoyFilter to the ingressgateway that defines the route configuration on which to rate limit. 
 
-NOTE: The above file deploys two Deployments, one for the Central Rate Limit Service and one for the Redis Instance. It also creates services for both the deployments. 
+   Looking at the file [filter-ratelimit-svc.yaml](ratelimit-manifests/filter-ratelimit-svc.yaml)
+   * The configuration adds rate limit actions for any route from a virtual host.
+   ```sh
+   kubectl apply -f ratelimit-manifests/filter-ratelimit-svc.yaml 
+   ```
+   
 
-The cofiguration for the Global Rate Limit service looks like this:
+### Test
 
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ratelimit
-  namespace: workshop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: ratelimit
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: ratelimit
-    spec:
-      containers:
-      - image: envoyproxy/ratelimit:9d8d70a8
-        imagePullPolicy: Always
-        name: ratelimit
-        command: ["/bin/ratelimit"]
-        env:
-        - name: LOG_LEVEL
-          value: debug
-        - name: REDIS_SOCKET_TYPE
-          value: tcp
-        - name: REDIS_URL
-          value: redis:6379
-        - name: USE_STATSD
-          value: "false"
-        - name: RUNTIME_ROOT
-          value: /data
-        - name: RUNTIME_SUBDIRECTORY
-          value: ratelimit
-        - name: RUNTIME_WATCH_ROOT
-          value: "false"
-        - name: RUNTIME_IGNOREDOTFILES
-          value: "true"
-        - name: HOST
-          value: "::"
-        - name: GRPC_HOST
-          value: "::"
-        ports:
-        - containerPort: 8080
-        - containerPort: 8081
-        - containerPort: 6070
-        volumeMounts:
-        - name: config-volume
-          mountPath: /data/ratelimit/config
-      volumes:
-      - name: config-volume
-        configMap:
-          name: ratelimit-config
+To test the global rate limit in action, run the following command in a terminal 
+session:
+
+```sh 
+ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+
+for i in {1..6}; do curl -Is $ISTIO_INGRESS_URL; done
 ```
 
-#### Apply configuration #1 to enable Global Rate Limit for the Ingress Gateway
-
-```bash
-kubectl apply -f global-ratelimit-1.yaml
-```
-
-The contents of the file looks like this:
+In the output you should notice that the first 5 requests will generate 
+output similar to the one below:
 
 ```
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: filter-ratelimit
-  namespace: istio-system
-spec:
-  workloadSelector:
-    labels:
-      istio: ingressgateway
-  configPatches:
-    # The Envoy config you want to modify
-    - applyTo: HTTP_FILTER
-      match:
-        context: GATEWAY
-        listener:
-          filterChain:
-            filter:
-              name: "envoy.filters.network.http_connection_manager"
-              subFilter:
-                name: "envoy.filters.http.router"
-      patch:
-        operation: INSERT_BEFORE
-        # Adds the Envoy Rate Limit Filter in HTTP filter chain.
-        value:
-          name: envoy.filters.http.ratelimit
-          typed_config:
-            "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
-            # domain can be anything! Match it to the ratelimter service config
-            domain: prodcatalog-ratelimit
-            failure_mode_deny: true
-            timeout: 10s
-            rate_limit_service:
-              grpc_service:
-                envoy_grpc:
-                  cluster_name: outbound|8081||ratelimit.workshop.svc.cluster.local
-                  authority: ratelimit.workshop.svc.cluster.local
-              transport_api_version: V3
+HTTP/1.1 200 OK
+x-powered-by: Express
+content-type: text/html; charset=utf-8
+content-length: 1203
+etag: W/"4b3-KO/ZeBhhZHNNKPbDwPiV/CU2EDU"
+date: Wed, 17 Jan 2024 16:53:23 GMT
+x-envoy-upstream-service-time: 34
+server: istio-envoy
 ```
 
-1. The above configration inserts the `envoy.filters.http.ratelimit` [global envoy filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ratelimit/v3/rate_limit.proto#envoy-v3-api-msg-extensions-filters-http-ratelimit-v3-ratelimit) into the **HTTP_FILTER** chain.
-1. The `rate_limit_service` field specifies the external rate limit service, `outbound|8081||ratelimit.workshop.svc.cluster.local` in this case.
-
-#### Apply configuration #2 to the IngressGateway. 
-
-This configuration defines the route on which rate limit with be applied. 
-
-```bash
-kubectl apply -f global-ratelimit-2.yaml
-```
-
-The contents of the file are:
+And the last request should generate output similar to:
 
 ```
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: filter-ratelimit-svc
-  namespace: istio-system
-spec:
-  workloadSelector:
-    labels:
-      istio: ingressgateway
-  configPatches:
-    - applyTo: VIRTUAL_HOST
-      match:
-        context: GATEWAY
-        routeConfiguration:
-          vhost:
-            name: ""
-            route:
-              action: ANY
-      patch:
-        operation: MERGE
-        # Applies the rate limit rules.
-        value:
-          rate_limits:
-            - actions: # any actions in here
-              - request_headers:
-                  header_name: ":path"
-                  descriptor_key: "PATH"
+HTTP/1.1 429 Too Many Requests
+x-envoy-ratelimited: true
+date: Wed, 17 Jan 2024 16:53:35 GMT
+server: istio-envoy
+transfer-encoding: chunked
 ```
 
-1. The above configuration adds rate limit actions for any route from a virtual host.
+We see this behavior because of the global rate limiting that is in effect that 
+is allowing only a max of **5 requests/minute** when the context-path is `/`
 
-### Validate
+## Reset the environment
 
-To test the global rate limit in action:
-
-1. Access the basic app web ui and start refreshing the browser. Once you hit 5 refreshes within a minute the page will stop working
-
-1. Send curl commands to the same url and grab the HTTP code. After hitting 5 curl commands within a minute, you will start seeing HTTP 429 response codes from the url.
-
-## Cleanup
+Execute the following command to remove all rate-limiting configuration and 
+services  and then run the same steps as in the [Initial state setup](#initial-state-setup) 
+to reset the environment one last time.
 
 ```
-# Delete Global Rate Limit Configuration
-kubectl delete -f global-ratelimit-2.yaml
-kubectl delete -f global-ratelimit-1.yaml
-kubectl delete -f global-server-configuration.yaml
-kubectl delete -f global-ratelimit-cm.yaml
-
-# Delete Local Rate Limit Configuration via Manifest File
-kubectl delete -f local-ratelimit.yaml
-
-# Delete Application Virtual Services
-kubectl delete -f ./setup-mesh-resources/  
+# Delete all rate limiting configuration and services
+kubectl delete -f ./ratelimit-manifests/  
 ```
-
-## Destroy
-
-Refer to [Destroy](../01-getting-started/README.md#destroy) section for
-cleanup of application resources.

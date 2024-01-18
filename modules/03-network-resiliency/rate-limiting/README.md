@@ -19,8 +19,8 @@ Use the following links to quickly jump to the desired section:
 In this step we add the Istio mesh resources to wrap the `frontend`, `productcatalog` and
 `catalogdetail` services.
 
-A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) is created for [`catalogdetail`](./setup-mesh-resources/catalogdetail-destinationrule.yaml) to select subsets
-based on the `version` label of the destination pods. However, the initial [`VirtualService`](./setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
+A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) is created for [`catalogdetail`](../../00-setup-mesh-resources/catalogdetail-destinationrule.yaml) to select subsets
+based on the `version` label of the destination pods. However, the initial [`VirtualService`](../../00-setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
 subset configuration thereby leading to a uniform traffic spread across both subsets.
 
 
@@ -29,7 +29,7 @@ subset configuration thereby leading to a uniform traffic spread across both sub
 cd ../03-network-resiliency/rate-limiting
 
 # Install the mesh resources
-kubectl apply -f ./setup-mesh-resources/
+kubectl apply -f ../../00-setup-mesh-resources/
 ```
 
 Output should be similar to:

@@ -46,7 +46,7 @@ virtualservice.networking.istio.io/productcatalog created
 Apply Local Rate Limiting to the `productcatalog` Service
 
 ```sh
-kubectl apply -f ratelimit-manifests/local-ratelimit.yaml
+kubectl apply -f ratelimit-manifests/local-ratelimit/local-ratelimit.yaml
 ```
 
 Looking into the contents of the file [local-ratelimit.yaml](ratelimit-manifests/local-ratelimit/local-ratelimit.yaml)

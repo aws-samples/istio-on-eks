@@ -49,7 +49,7 @@ Apply Local Rate Limiting to the `productcatalog` Service
 kubectl apply -f ratelimit-manifests/local-ratelimit.yaml
 ```
 
-Looking into the contents of the file [local-ratelimit.yaml](ratelimit-manifests/local-ratelimit.yaml)
+Looking into the contents of the file [local-ratelimit.yaml](ratelimit-manifests/local-ratelimit/local-ratelimit.yaml)
 
 1. The **HTTP_FILTER** patch inserts the `envoy.filters.http.local_ratelimit` [local envoy filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit) into the HTTP connection manager filter chain. 
 2. The local rate limit filter’s [token bucket](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/local_ratelimit/v3/local_rate_limit.proto#envoy-v3-api-field-extensions-filters-http-local-ratelimit-v3-localratelimit-token-bucket) is configured to allow **10 requests/min**. 
@@ -131,11 +131,11 @@ rate limit service that implements Envoy’s rate limit service protocol.
 
 1. Configuration for the Global Rate Limit service
    * Configuration is captured in `ratelimit-config` **ConfigMap** in the file 
-   [global-ratelimit-config.yaml](ratelimit-manifests/global-ratelimit-config.yaml)
+   [global-ratelimit-config.yaml](ratelimit-manifests/global-ratelimit/global-ratelimit-config.yaml)
    * As can be observed in the file, rate limit requests to the `/` path is set to
     **5 requests/minute** and all other requests at **100 requests/minute**.
 2. Global Rate Limit service with Redis
-   *  File [global-ratelimit-service.yaml](ratelimit-manifests/global-ratelimit-service.yaml) 
+   *  File [global-ratelimit-service.yaml](ratelimit-manifests/global-ratelimit/global-ratelimit-service.yaml) 
    has **Deployment** and **Service** definitions for 
       * Central Rate Limit Service
       * Redis
@@ -145,8 +145,8 @@ Apply the Global Rate Limiting configuration and deploy the dependent services
 as shown below to the EKS cluster and Istio service-mesh.
 
 ```sh
-kubectl apply -f ratelimit-manifests/global-ratelimit-config.yaml
-kubectl apply -f ratelimit-manifests/global-ratelimit-service.yaml
+kubectl apply -f ratelimit-manifests/global-ratelimit/global-ratelimit-config.yaml
+kubectl apply -f ratelimit-manifests/global-ratelimit/global-ratelimit-service.yaml
 ```
 
 ### Apply the Global Rate Limits
@@ -157,18 +157,18 @@ Applying global rate limits is done in two steps:
 using Envoy’s global rate limit filter.
 
    ```sh
-   kubectl apply -f ratelimit-manifests/filter-ratelimit.yaml
+   kubectl apply -f ratelimit-manifests/global-ratelimit/filter-ratelimit.yaml
    ```
-   Looking at the file [filter-ratelimit.yaml](ratelimit-manifests/filter-ratelimit.yaml)
+   Looking at the file [filter-ratelimit.yaml](ratelimit-manifests/global-ratelimit/filter-ratelimit.yaml)
    * The  configuration inserts the `envoy.filters.http.ratelimit` [global envoy filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ratelimit/v3/rate_limit.proto#envoy-v3-api-msg-extensions-filters-http-ratelimit-v3-ratelimit) into the **HTTP_FILTER** chain.
    * The `rate_limit_service` field specifies the external rate limit service, `outbound|8081||ratelimit.workshop.svc.cluster.local` in this case.
 
 2. Apply another EnvoyFilter to the ingressgateway that defines the route configuration on which to rate limit. 
 
-   Looking at the file [filter-ratelimit-svc.yaml](ratelimit-manifests/filter-ratelimit-svc.yaml)
+   Looking at the file [filter-ratelimit-svc.yaml](ratelimit-manifests/global-ratelimit/filter-ratelimit-svc.yaml)
    * The configuration adds rate limit actions for any route from a virtual host.
    ```sh
-   kubectl apply -f ratelimit-manifests/filter-ratelimit-svc.yaml 
+   kubectl apply -f ratelimit-manifests/global-ratelimit/filter-ratelimit-svc.yaml 
    ```
    
 

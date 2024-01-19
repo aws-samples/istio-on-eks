@@ -216,7 +216,7 @@ Execute the following command to remove all rate-limiting configuration and
 services  and then run the same steps as in the [Initial state setup](#initial-state-setup) 
 to reset the environment one last time.
 
-```
+```sh
 # Delete all rate limiting configuration and services
-kubectl delete -f ./ratelimit-manifests/  
+kubectl delete -Rf ./ratelimit-manifests/  
 ```

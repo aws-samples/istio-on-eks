@@ -76,7 +76,7 @@ Test the delay by running a `curl` command against the `catalogdetail` service f
 ```sh  
 # Create a multitool pod to be able to use curl from within the mesh
 
-kubectl run multitool --image=praqma/network-multitool -n workshop
+kubectl run multitool --image=wbitt/network-multitool -n workshop
 ```
 
 Output should be similar to:
@@ -178,7 +178,7 @@ spec:
 
 ### Test
 
-Test the delay by running a `curl` command against the `catalogdetail` service from within the mesh for user named 'internal' and 'external'.
+Test the abort by running a `curl` command against the `catalogdetail` service from within the mesh for user named 'internal' and 'external'.
 
 Run the `curl` command from within the mesh for the user named 'internal'
 ```sh 

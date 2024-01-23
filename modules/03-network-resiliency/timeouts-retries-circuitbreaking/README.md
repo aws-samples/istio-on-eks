@@ -53,7 +53,7 @@ from within the mesh.
 
 ```sh  
 # Create a multitool pod just to be able to use curl from within the mesh
-kubectl run multitool --image=praqma/network-multitool -n workshop
+kubectl run multitool --image=wbitt/network-multitool -n workshop
 
 # Wait for the pod to be created
 sleep 5

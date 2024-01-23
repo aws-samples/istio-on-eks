@@ -1,44 +1,11 @@
-# Network Resiliency - Timeouts/Retries/Circuit Breaking
+# Network Resiliency - Timeouts, Retries and Circuit Breaking
 
 This sub-module will cover the network resiliency and testing features such as **Timeouts, Retries and Circuit Breaking** of Istio service-mesh on Amazon EKS. 
 
 Use the following links to quickly jump to the desired section:
 1. [Timeouts](#timeouts)
 2. [Retries](#retries)
-3. [Circuit-Breaking](#circuit-breaking)
-
-## Prerequisites:
-1. [Module 1 - Getting Started](../01-getting-started/)
-2. [Install `istioctl` and add it to the $PATH](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/#install-hahahugoshortcode860s2hbhb)
-
->Note: This module will build on the application resources deployed in 
-[Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../01-getting-started/README.md#destroy) section in Module 1.
-
-## Initial state setup
-  
-In this step we add the Istio mesh resources to wrap the `frontend`, `productcatalog` and
-`catalogdetail` services.
-
-A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) is created for [`catalogdetail`](../../00-setup-mesh-resources/catalogdetail-destinationrule.yaml) to select subsets
-based on the `version` label of the destination pods. However, the initial [`VirtualService`](../../00-setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
-subset configuration thereby leading to a uniform traffic spread across both subsets.
-
-```bash
-# This assumes that you are currently in "istio-on-eks/modules/01-getting-started" folder
-cd ../03-network-resiliency/timeouts-retries-circuitbreaking
-
-# Install the mesh resources
-kubectl apply -f ../../00-setup-mesh-resources/
-```
-
-Output should be similar to:
-
-```
-destinationrule.networking.istio.io/catalogdetail created
-virtualservice.networking.istio.io/catalogdetail created
-virtualservice.networking.istio.io/frontend created
-virtualservice.networking.istio.io/productcatalog created
-```
+3. [Circuit Breaking](#circuit-breaking)
 
 ## Timeouts
 

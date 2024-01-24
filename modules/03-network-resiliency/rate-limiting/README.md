@@ -1,45 +1,10 @@
 # Network Resiliency -  Rate Limiting
-This sub-module will cover the network resiliency feature such as rate limiting 
-of Istio service-mesh on Amazon EKS.
+This sub-module will cover the Istio service-mesh feature of rate limiting for network resiliency on Amazon EKS.
 
 Use the following links to quickly jump to the desired section:
-1. [Initial state setup](#initial-state-setup)
-2. [Local Rate Limiting](#local-rate-limiting)
-3. [Global Rate Limiting](#global-rate-limiting)
-4. [Reset the environment](#reset-the-environment)
-
-## Prerequisites:
-
-- [Module 1 - Getting Started](../../01-getting-started/)
-
-> **Note:** This module will build on the application resources deployed in [Module 1 - Getting Started](../01-getting-started/). That means you **don't** have to execute the [Destroy](../../01-getting-started/README.md#destroy) section in Module 1.
-
-## Initial state setup
-
-In this step we add the Istio mesh resources to wrap the `frontend`, `productcatalog` and
-`catalogdetail` services.
-
-A [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) is created for [`catalogdetail`](../../00-setup-mesh-resources/catalogdetail-destinationrule.yaml) to select subsets
-based on the `version` label of the destination pods. However, the initial [`VirtualService`](../../00-setup-mesh-resources/catalogdetail-virtualservice.yaml) definition does not specify any 
-subset configuration thereby leading to a uniform traffic spread across both subsets.
-
-
-```sh
-# This assumes that you are currently in "istio-on-eks/modules/01-getting-started" folder
-cd ../03-network-resiliency/rate-limiting
-
-# Install the mesh resources
-kubectl apply -f ../../00-setup-mesh-resources/
-```
-
-Output should be similar to:
-
-```sh
-destinationrule.networking.istio.io/catalogdetail created
-virtualservice.networking.istio.io/catalogdetail created
-virtualservice.networking.istio.io/frontend created
-virtualservice.networking.istio.io/productcatalog created
-```
+1. [Local Rate Limiting](#local-rate-limiting)
+2. [Global Rate Limiting](#global-rate-limiting)
+3. [Reset the environment](#reset-the-environment)
 
 ## Local Rate Limiting
 

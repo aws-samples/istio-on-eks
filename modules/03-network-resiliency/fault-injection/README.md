@@ -71,22 +71,29 @@ spec:
 
 ### Test
 
-Test the delay by running a `curl` command against the `catalogdetail` service from within the mesh for user named 'internal' and 'external'.
+Test the delay by running a `curl` command against the `catalogdetail` for user named 'internal' and 'external'.
 
 ```sh  
-# Create a multitool pod to be able to use curl from within the mesh
+# Set the FE_POD_NAME variable to the name of the frontend pod in the workshop namespace
 
-kubectl run multitool --image=wbitt/network-multitool -n workshop
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+```
+
+```sh  
+# Access the frontend container in the workshop namespace interactively
+
+kubectl exec -it ${FE_POD_NAME} -n workshop -c frontend -- bash
 ```
 
 Output should be similar to:
-```sh
-pod/multitool created
+```sh  
+root@frontend-container-id:/app#
+
+# Allows accessing the shell inside the frontend container for executing commands
 ```
 
-Run the `curl` command from within the mesh for the user named 'internal'
+Run the `curl` command for the user named 'internal'
 ```sh 
-kubectl exec -n workshop -t multitool -- \
 curl http://catalogdetail:3000/catalogdetail/ -s -H "user: internal" -o /dev/null \
 -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
@@ -98,9 +105,8 @@ Time taken to start transfer: 15.009529
 # A 15-sec delay is introduced for user named 'internal' based on the delay fault configuration for 'catalogdetail' virtual service
 ```
 
-Run the `curl` command from within the mesh for the user named 'external' (could be any user other than 'internal')
+Run the `curl` command for the user named 'external' (could be any user other than 'internal')
 ```sh 
-kubectl exec -n workshop -t multitool -- \
 curl http://catalogdetail:3000/catalogdetail/ -s -H "user: external" -o /dev/null \
 -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
@@ -110,6 +116,12 @@ Output should be similar to:
 Time taken to start transfer: 0.006548
 
 # No delay is introduced for user named 'external', since delay fault configuration in 'catalogdetail' virtual service was only applied for user named 'internal'
+```
+
+Exit from the shell inside the frontend container
+
+```sh
+root@frontend-container-id:/app#exit
 ```
 
 ## Injecting Abort Fault into HTTP Requests
@@ -178,11 +190,24 @@ spec:
 
 ### Test
 
-Test the abort by running a `curl` command against the `catalogdetail` service from within the mesh for user named 'internal' and 'external'.
+Test the abort by running a `curl` command against the `catalogdetail` for user named 'internal' and 'external'.
 
-Run the `curl` command from within the mesh for the user named 'internal'
+```sh  
+# Access the frontend container in the workshop namespace interactively
+
+kubectl exec -it ${FE_POD_NAME} -n workshop -c frontend -- bash
+```
+
+Output should be similar to:
+```sh  
+root@frontend-container-id:/app#
+
+# Allows accessing the shell inside the frontend container for executing commands
+```
+
+
+Run the `curl` command for the user named 'internal'
 ```sh 
-kubectl exec -n workshop -t multitool -- \
 curl http://catalogdetail:3000/catalogdetail/ -s -H "user: internal" -o /dev/null \
 -w "HTTP Response: %{http_code}\n"
 ```
@@ -194,9 +219,8 @@ HTTP Response: 500
 # HTTP code 500 (Abort) is returned for user named 'internal' based on the abort fault configuration for 'catalogdetail' virtual service
 ```
 
-Run the `curl` command from within the mesh for the user named 'external' (could be any user other than 'internal') 
+Run the `curl` command for the user named 'external' (could be any user other than 'internal') 
 ```sh 
-kubectl exec -n workshop -t multitool -- \
 curl http://catalogdetail:3000/catalogdetail/ -s -H "user: external" -o /dev/null \
 -w "HTTP Response: %{http_code}\n"
 ```
@@ -207,11 +231,12 @@ HTTP Response: 200
 
 # HTTP code 200 (Success) is returned for user named 'external', since abort fault configuration in 'catalogdetail' virtual service was only applied for user named 'internal'
 ```
+Exit from the shell inside the frontend container
+
+```sh
+root@frontend-container-id:/app#exit
+```
 
 ### Reset the environment
 
-Delete the `multitool` pod with the command shown below and then run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment for testing the remaining features.
-
-```sh
-kubectl delete pod multitool -n workshop
-```
+Run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment.

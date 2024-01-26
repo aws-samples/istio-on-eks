@@ -22,13 +22,12 @@ Looking into the contents of the file [local-ratelimit.yaml](local-ratelimit/loc
 
 ### Test
 
-To test the rate limiter in action, exec into a pod in the mesh, in our example 
-below it is the `catalogdetail` pod and send a bunch of requests to the `prodcatalog` service to trigger the rate limiter. 
+To test the rate limiter in action, exec into the `frontend` pod and send requests to the `prodcatalog` service to trigger the rate limiter. 
 
 ```sh
-POD_NAME=$(kubectl get pod -l app=catalogdetail -o jsonpath='{.items[0].metadata.name}' -n workshop)
+POD_NAME=$(kubectl get pod -l app=frontend -o jsonpath='{.items[0].metadata.name}' -n workshop)
 
-kubectl exec $POD_NAME -n workshop -c catalogdetail -- \
+kubectl exec $POD_NAME -n workshop -c frontend -- \
 bash -c "for i in {1..20}; do curl -sI http://productcatalog:5000/products/; done" 
 ```
 
@@ -133,7 +132,7 @@ using Envoy’s global rate limit filter.
    Looking at the file [filter-ratelimit-svc.yaml](global-ratelimit/filter-ratelimit-svc.yaml)
    * The configuration adds rate limit actions for any route from a virtual host.
    ```sh
-   kubectl apply -f ratelimit-manifests/global-ratelimit/filter-ratelimit-svc.yaml 
+   kubectl apply -f global-ratelimit/filter-ratelimit-svc.yaml 
    ```
    
 

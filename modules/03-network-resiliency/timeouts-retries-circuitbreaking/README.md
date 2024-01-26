@@ -10,8 +10,8 @@ Use the following links to quickly jump to the desired section:
 ## Timeouts
 
 To test the timeout functionality we will make the following two changes:
-1. Add a `delay` of `5` seconds to the `catalogdetail` VirtualService
-2. Add a `timeout` of `2` seconds to the `productcatalog` VirtualService
+1. Add a `delay` of `5` seconds to the [`catalogdetail`](./timeouts/catalogdetail-virtualservice.yaml) VirtualService
+2. Add a `timeout` of `2` seconds to the [`productcatalog`](./timeouts/productcatalog-virtualservice.yaml) VirtualService
 
 Since the `productcatalog` service calls the `catalogdetail` service and since 
 `catalogdetail` will take about `5` seconds to respond, we will get to see the 
@@ -21,9 +21,12 @@ timeouts getting triggered.
 
 #### Testing Delays
 
-Apply the delay configuration to the `catalogdetail` VirtualService
+Apply the delay configuration to the [`catalogdetail`](./timeouts/catalogdetail-virtualservice.yaml) VirtualService
 
 ```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency" folder
+cd timeouts-retries-circuitbreaking
+
 kubectl apply -f ./timeouts/catalogdetail-virtualservice.yaml
 ```
 
@@ -42,7 +45,7 @@ If the delay configuration is applied correctly, the output should be similar to
 
 #### Testing Timeouts
 
-Apply the timeout configuration to the `productcatalog` VirtualService
+Apply the timeout configuration to the [`productcatalog`](./timeouts/productcatalog-virtualservice.yaml) VirtualService
 
 ```sh
 kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
@@ -52,38 +55,33 @@ Test the timeout by running a `curl` command against the `productcatalog` servic
 from within the mesh.
 
 ```sh  
-# Create a multitool pod just to be able to use curl from within the mesh
-kubectl run multitool --image=wbitt/network-multitool -n workshop
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
 
-# Wait for the pod to be created
-sleep 5
-
-kubectl exec -n workshop -t multitool -- \
-curl http://productcatalog:5000/products/ -s -o /dev/null \
--w "Time taken to start transfer: %{time_starttransfer}\n"
+curl http://productcatalog:5000/products/ -s -o /dev/null -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
 Output should be similar to:
 
 ```
-pod/multitool created
-Time taken to start transfer: 2.006628
+Time taken to start transfer: 2.005132
 ```
 
 ![](../../../images/03-timeouts.png)
 
 ### Reset the environment
 
-Delete the `multitool` pod with the command shown below and then run the same 
-steps as in the [Initial state setup](#initial-state-setup) to reset the 
-environment for testing the remaining features.
+Reset the `catalogdetail` and `productcatalog` deployment with the following instructions and then 
+run the same steps as in the [`Initial state setup`](../README.md)to reset 
+the environment for testing the remaining features.
 
-```sh
-kubectl delete pod multitool -n workshop
+```sh 
+kubectl delete deployment -n workshop catalogdetail productcatalog
+helm upgrade mesh-basic ../../01-getting-started/ -n workshop
 ```
 
 ## Retries:
 
-To test the retries functionality we will make the following changes:
+To test the retries functionality we will make the following changes to the [`productcatalog`](./retries/productcatalog-virtualservice.yaml) VirtualService:
+
 1. Add configuration for `retries` with `2` attempts to the `productcatalog` 
 VirtualService
 2. Edit the `productcatalog` deployment to run a container that does nothing other 
@@ -140,12 +138,12 @@ Output should be similar:
 We see `3` attempt counts as, in addition to `2` retries, it also includes the 
 very first attempt at connecting to the service.
 
-![](../../../images/03-retries.png)
+![](../../../images/03-Retries.png)
 
 ### Reset the environment
 
 Reset the `productcatalog` deployment with the following instructions and then 
-run the same steps as in the [Initial state setup](#initial-state-setup) to reset 
+run the same steps as in the [`Initial state setup`](../README.md) to reset 
 the environment for testing the remaining features.
 
 ```sh 
@@ -156,7 +154,7 @@ helm upgrade mesh-basic ../../01-getting-started/ -n workshop
 ## Circuit Breaking
 
 To test the circuit-breaker functionality we will make the following changes:
-1. Modify the existing `catalogdetail` destination rule to apply circuit breaking
+1. Modify the existing [`catalogdetail`](./circuitbreaking/catalogdetail-destinationrule.yaml)  destination rule to apply circuit breaking
 configuration
 
 ```sh
@@ -401,7 +399,7 @@ that our circuit-breaker configuration to the `catalogdetail` DestinationRule wo
 ### Reset the environment
 
 Delete the `fortio` pod using the following command and then run the same steps 
-as in the [Initial state setup](#initial-state-setup) to reset the environment 
+as in the [`Initial state setup`](../README.md) to reset the environment 
 one last time.
 
 ```sh 

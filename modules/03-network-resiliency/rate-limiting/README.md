@@ -22,8 +22,7 @@ Looking into the contents of the file [local-ratelimit.yaml](local-ratelimit/loc
 
 ### Test
 
-To test the rate limiter in action, exec into a pod in the mesh, in our example 
-below it is the `catalogdetail` pod and send a bunch of requests to the `prodcatalog` service to trigger the rate limiter. 
+To test the rate limiter in action, exec into a pod in the mesh, in our example below it is the `frontend` pod and send a bunch of requests to the `prodcatalog` service to trigger the rate limiter. 
 
 ```sh
 POD_NAME=$(kubectl get pod -l app=frontend -o jsonpath='{.items[0].metadata.name}' -n workshop)

@@ -385,7 +385,7 @@ The bearer tokens are minted via Keycloak using the helper script [`04-keycloak-
 TOKEN=$(../../bin/04-keycloak-helpers.sh -g -u alice) 
 ```
 
-The minted tokens can then be introspected using the same helper script like below.
+The minted tokens can then be inspected using the same helper script like below.
 
 ```bash
 ../../bin/04-keycloak-helpers.sh -i -t $TOKEN

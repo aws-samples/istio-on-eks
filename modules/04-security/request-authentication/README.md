@@ -48,7 +48,7 @@ To make it easier to work with Keycloak the following scripts have been provided
 |------|---------|-----------|
 | [`04-keycloak-setup.sh`](/bin/04-keycloak-setup.sh) | Installs Keycloak in the Amazon EKS cluster and provisions a new realm with users, roles and OIDC client for `productapp` application. Saves Keycloak admin user and application user credentials in AWS Secrets Manager. Uses `external-secrets` to load the admin credential for Keycloak. | [See arguments](#script-arguments-04-keycloak-setupsh) |
 | [`04-keycloak-cleanup.sh`](/bin/04-keycloak-cleanup.sh) | Uninstalls Keycloak and cleans up all the related Kubernetes and AWS resources. | [See arguments](#script-arguments-04-keycloak-cleanupsh) |
-| [`04-keycloak-helpers.sh`](/bin/04-keycloak-helpers.sh) | Contains helper functions to generate and introspect access tokens, apply authentication and authorization policies on ingress gat4eway, and print Keycloak admin console access information. | [See arguments](#script-arguments-04-keycloak-helperssh) |
+| [`04-keycloak-helpers.sh`](/bin/04-keycloak-helpers.sh) | Contains helper functions to generate and inspect access tokens, apply authentication and authorization policies on ingress gat4eway, and print Keycloak admin console access information. | [See arguments](#script-arguments-04-keycloak-helperssh) |
 
 ### Script Arguments: `04-keycloak-setup.sh`
 
@@ -79,14 +79,14 @@ Following table lists the arguments of `04-keycloak-helpers.sh` script.
 
 | Short Form | Long Form | Value Type | Required | Default | Description |
 |------------|-----------|------------|----------|---------|-------------|
-| `-a` | `--admin` | `-` | No | `-` | Print Keycloak admin password. Mutually exclusive with `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--introspect`, `--authn` and `--authz`. |
-| `-c` | `--console` | `-` | No | `-` | Print Keycloak console URL. Mutually exclusive with `-a`\|`--admin`, `-g`\|`--generate`, `-i`\|`--introspect`, `--authn` and `--authz`. |
-| `-g` | `--generate` | `-` | No | `-` | Generate access token for application user (requires `-u\|--user`). Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-i`\|`--introspect`, `--authn` and `--authz`. |
+| `-a` | `--admin` | `-` | No | `-` | Print Keycloak admin password. Mutually exclusive with `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--inspect`, `--authn` and `--authz`. |
+| `-c` | `--console` | `-` | No | `-` | Print Keycloak console URL. Mutually exclusive with `-a`\|`--admin`, `-g`\|`--generate`, `-i`\|`--inspect`, `--authn` and `--authz`. |
+| `-g` | `--generate` | `-` | No | `-` | Generate access token for application user (requires `-u\|--user`). Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-i`\|`--inspect`, `--authn` and `--authz`. |
 | `-u` | `--user` | `string` | Required when `-g\|--generate` is set | `-` | Application username. |
-| `-i` | `--introspect` | `-` | No | `-` | Introspect access token (requires `-t`\|`--token`). Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `--authn` and `--authz`. |
-| `-t` | `--token` | `string` | Required when `-i`\|`--introspect` is set | `-` | Access token. |
-| `-` | `--authn` | `-` | `-` | `-` | Apply `RequestAuthentication` manifest. Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--introspect` and `--authz`. |
-| `-` | `--authz` | `-` | `-` | `-` | Apply `AuthorizationPolicy` manifest. Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--introspect` and `--authn`. |
+| `-i` | `--inspect` | `-` | No | `-` | Inspect access token (requires `-t`\|`--token`). Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `--authn` and `--authz`. |
+| `-t` | `--token` | `string` | Required when `-i`\|`--inspect` is set | `-` | Access token. |
+| `-` | `--authn` | `-` | `-` | `-` | Apply `RequestAuthentication` manifest. Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--inspect` and `--authz`. |
+| `-` | `--authz` | `-` | `-` | `-` | Apply `AuthorizationPolicy` manifest. Mutually exclusive with `-a`\|`--admin`, `-c`\|`--console`, `-g`\|`--generate`, `-i`\|`--inspect` and `--authn`. |
 | `-n` | `--keycloak-namespace` | `string` | No | `keycloak` | Namespace for keycloak |
 | `-r` | `--keycloak-realm` | `string` | No | `istio` | Keycloak realm for istio |
 | `-h` | `--help` | `-` | No | `-` | Show help message |
@@ -136,7 +136,7 @@ Examples:
  - Generate access token for application user 'alice':
    $ bin/04-keycloak-helpers.sh -g -u alice
 
- - Introspect generated access token:
+ - Inspect generated access token:
    $ bin/04-keycloak-helpers.sh -i -t <TOKEN>
 
  - Apply RequestAuthentication manifest:
@@ -252,7 +252,7 @@ Generate a token for user `alice`.
 TOKEN=$(../../bin/04-keycloak-helpers.sh -g -u alice)
 ```
 
-Introspect the generated access token using the helper script.
+Inspect the generated access token using the helper script.
 
 ```bash
 ../../bin/04-keycloak-helpers.sh -i -t $TOKEN

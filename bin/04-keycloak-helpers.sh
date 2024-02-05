@@ -51,8 +51,8 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -i|--introspect)
-      INTROSPECT_TOKEN=YES
+    -i|--inspect)
+      INSPECT_TOKEN=YES
       shift # past argument
       ;;
     -t|--token)
@@ -101,14 +101,14 @@ done
 function print_usage() {
   echo ""
   echo "Options:"
-  echo "    -a, --admin                        Print Keycloak admin password. Mutually exclusive with -c|--console, -g|--generate, -i|--introspect, --authn and --authz."
-  echo "    -c, --console                      Print Keycloak console URL. Mutually exclusive with -a|--admin, -g|--generate, -i|--introspect, --authn and --authz."
-  echo "    -g, --generate                     Generate access token for application user (requires -u|--user). Mutually exclusive with -a|--admin, -c|--console, -i|--introspect, --authn and --authz."
+  echo "    -a, --admin                        Print Keycloak admin password. Mutually exclusive with -c|--console, -g|--generate, -i|--inspect, --authn and --authz."
+  echo "    -c, --console                      Print Keycloak console URL. Mutually exclusive with -a|--admin, -g|--generate, -i|--inspect, --authn and --authz."
+  echo "    -g, --generate                     Generate access token for application user (requires -u|--user). Mutually exclusive with -a|--admin, -c|--console, -i|--inspect, --authn and --authz."
   echo "    -u, --user string                  Application username (required when -g|--generate is set)."
-  echo "    -i, --introspect                   Introspect access token (requires -t|--token). Mutually exclusive with -a|--admin, -c|--console, -g|--generate, --authn and --authz."
-  echo "    -t, --token string                 Access token (required when -i|--introspect is set)."
-  echo "    --authn                            Apply RequestAuthentication manifest. Mutually exclusive with -a|--admin, -c|--console, -g|--generate, -i|--introspect and --authz."
-  echo "    --authz                            Apply AuthorizationPolicy manifest. Mutually exclusive with -a|--admin, -c|--console, -g|--generate, -i|--introspect and --authn."
+  echo "    -i, --inspect                      Inspect access token (requires -t|--token). Mutually exclusive with -a|--admin, -c|--console, -g|--generate, --authn and --authz."
+  echo "    -t, --token string                 Access token (required when -i|--inspect is set)."
+  echo "    --authn                            Apply RequestAuthentication manifest. Mutually exclusive with -a|--admin, -c|--console, -g|--generate, -i|--inspect and --authz."
+  echo "    --authz                            Apply AuthorizationPolicy manifest. Mutually exclusive with -a|--admin, -c|--console, -g|--generate, -i|--inspect and --authn."
   echo "    -n, --keycloak-namespace string    Namespace for keycloak (default keycloak)."
   echo "    -r, --keycloak-realm string        Keycloak realm for istio (default istio)."
   echo "    -h, --help                         Show this help message."
@@ -151,7 +151,7 @@ function validate_mutually_exclusive_args() {
   if [ -n "$GENERATE_TOKEN" ]; then
     ((CNT++))
   fi
-  if [ -n "$INTROSPECT_TOKEN" ]; then
+  if [ -n "$INSPECT_TOKEN" ]; then
     ((CNT++))
   fi
   if [ -n "$APPLY_AUTHN" ]; then
@@ -161,10 +161,10 @@ function validate_mutually_exclusive_args() {
     ((CNT++))
   fi
   if [ $CNT -eq 0 ]; then
-    handle_error_with_usage "ERROR: Any one of -a|--admin, -c|--console, -g|--generate, -i|--introspect, --authn or --authz is required."
+    handle_error_with_usage "ERROR: Any one of -a|--admin, -c|--console, -g|--generate, -i|--inspect, --authn or --authz is required."
   fi
   if [ $CNT -gt 1 ]; then
-    handle_error_with_usage "ERROR: Arguments -a|--admin, -c|--console, -g|--generate, -i|--introspect, --authn and --authz are mutually exclusive. Specify any one."
+    handle_error_with_usage "ERROR: Arguments -a|--admin, -c|--console, -g|--generate, -i|--inspect, --authn and --authz are mutually exclusive. Specify any one."
   fi
 }
 
@@ -179,13 +179,13 @@ function validate_arg_generate() {
   fi
 }
 
-function validate_arg_introspect() {
+function validate_arg_inspect() {
   if [ -n "$VERBOSE" ]; then
-  echo "Validating arguments to introspect access token..."
+  echo "Validating arguments to inspect access token..."
   fi
-  if [ -n "$INTROSPECT_TOKEN" ]; then
+  if [ -n "$INSPECT_TOKEN" ]; then
     if [ -z "$TOKEN" ]; then
-      handle_error_with_usage "ERROR: Token is required for introspection. Use -t|--token option to specify token."
+      handle_error_with_usage "ERROR: Token is required for inspection. Use -t|--token option to specify token."
     fi
   fi
 }
@@ -237,8 +237,8 @@ function print_script_arguments() {
   echo "  GENERATE_TOKEN............$GENERATE_TOKEN"
   echo "  APP_USER..................$APP_USER"
   fi
-  if [ -n "$INTROSPECT_TOKEN" ]; then
-  echo "  INTROSPECT_TOKEN..........$INTROSPECT_TOKEN"
+  if [ -n "$INSPECT_TOKEN" ]; then
+  echo "  INSPECT_TOKEN.............$INSPECT_TOKEN"
   echo "  TOKEN.....................$TOKEN"
   fi
   if [ -n "$APPLY_AUTHN" ]; then
@@ -329,17 +329,17 @@ function jwt() {
   done
 }
 
-function introspect_token() {
+function inspect_token() {
   if [ -n "$VERBOSE" ]; then
-  echo "Introspecting JWT token..."
+  echo "Inspecting JWT token..."
   fi
-  INTROSPECTION_RESPONSE=$(jwt "$TOKEN")
+  INSPECTION_RESPONSE=$(jwt "$TOKEN")
   CMD_RESULT=$?
   if [ $CMD_RESULT -ne 0 ]; then
-    handle_error "ERROR: Failed to introspect access token."
+    handle_error "ERROR: Failed to inspect access token."
   fi
   echo "Decoded JWT"
-  echo "${INTROSPECTION_RESPONSE}" | jq -r '.'
+  echo "${INSPECTION_RESPONSE}" | jq -r '.'
 }
 
 # https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
@@ -409,8 +409,8 @@ function dispatch_call() {
   if [ -n "$GENERATE_TOKEN" ]; then
     get_access_token
   fi
-  if [ -n "$INTROSPECT_TOKEN" ]; then
-    introspect_token
+  if [ -n "$INSPECT_TOKEN" ]; then
+    inspect_token
   fi
   if [ -n "$APPLY_AUTHN" ]; then
     apply_requestauthentication
@@ -428,7 +428,7 @@ validate_mutually_exclusive_args
 
 validate_arg_generate
 
-validate_arg_introspect
+validate_arg_inspect
 
 resolve_arg_keycloak_namespace
 

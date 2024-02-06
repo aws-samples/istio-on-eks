@@ -1,0 +1,15 @@
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: istio-ingress
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  jwtRules:
+  - issuer: ISSUER
+    jwksUri: JWKS_URI
+    audiences:
+    - productapp
+    forwardOriginalToken: true

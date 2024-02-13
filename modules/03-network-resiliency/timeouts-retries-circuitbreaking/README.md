@@ -82,6 +82,7 @@ Output should be similar to:
 ```
 Time taken to start transfer: 2.005132
 ```
+Refresh the browser and you can see the timeouts from Kiali
 
 ![](../../../images/03-timeouts.png)
 
@@ -108,7 +109,9 @@ deployment:
 
 To apply these changes, run the following command:
 
-```sh 
+```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder
+
 kubectl apply -f ./retries/
 
 kubectl get deployment -n workshop productcatalog -o json |
@@ -163,6 +166,8 @@ To test the circuit-breaker functionality we will make the following changes:
 configuration
 
 ```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder
+
 kubectl apply -f ./circuitbreaking/
 ```
 
@@ -400,6 +405,8 @@ cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pend
 As can be seen in the the output above `upstream_rq_pending_overflow` has a value 
 of 17, which means 17 calls so far have been flagged for circuitbreaking proving 
 that our circuit-breaker configuration to the `catalogdetail` DestinationRule worked.
+
+![](../../../images/03-circuitbreaking.png)
 
 ### Reset the environment
 

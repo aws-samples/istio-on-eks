@@ -54,9 +54,27 @@ kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
 Test the timeout by running a `curl` command against the `productcatalog` service 
 from within the mesh.
 
-```sh  
-export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+```sh
+# Set the FE_POD_NAME variable to the name of the frontend pod in the workshop namespace
 
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+```
+
+```sh
+# Access the frontend container in the workshop namespace interactively
+
+kubectl -n workshop exec -it ${FE_POD_NAME} -c frontend bash
+```
+Output should be similar to:
+
+```sh
+root@frontend-container-id:/app#
+
+# Allows accessing the shell inside the frontend container for executing commands
+```
+Run the curl command  
+
+```sh
 curl http://productcatalog:5000/products/ -s -o /dev/null -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
 Output should be similar to:
@@ -67,16 +85,10 @@ Time taken to start transfer: 2.005132
 
 ![](../../../images/03-timeouts.png)
 
+
 ### Reset the environment
 
-Reset the `catalogdetail` and `productcatalog` deployment with the following instructions and then 
-run the same steps as in the [`Initial state setup`](../README.md)to reset 
-the environment for testing the remaining features.
-
-```sh 
-kubectl delete deployment -n workshop catalogdetail productcatalog
-helm upgrade mesh-basic ../../01-getting-started/ -n workshop
-```
+Run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment.
 
 ## Retries:
 
@@ -142,14 +154,7 @@ very first attempt at connecting to the service.
 
 ### Reset the environment
 
-Reset the `productcatalog` deployment with the following instructions and then 
-run the same steps as in the [`Initial state setup`](../README.md) to reset 
-the environment for testing the remaining features.
-
-```sh 
-kubectl delete deployment -n workshop productcatalog
-helm upgrade mesh-basic ../../01-getting-started/ -n workshop
-```
+Run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment.
 
 ## Circuit Breaking
 

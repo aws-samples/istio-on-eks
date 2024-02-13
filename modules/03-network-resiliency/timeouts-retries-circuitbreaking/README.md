@@ -54,9 +54,27 @@ kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
 Test the timeout by running a `curl` command against the `productcatalog` service 
 from within the mesh.
 
-```sh  
-export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+```sh
+# Set the FE_POD_NAME variable to the name of the frontend pod in the workshop namespace
 
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+```
+
+```sh
+# Access the frontend container in the workshop namespace interactively
+
+kubectl -n workshop exec -it ${FE_POD_NAME} -c frontend bash
+```
+Output should be similar to:
+
+```sh
+root@frontend-container-id:/app#
+
+# Allows accessing the shell inside the frontend container for executing commands
+```
+Run the curl command  
+
+```sh
 curl http://productcatalog:5000/products/ -s -o /dev/null -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
 Output should be similar to:
@@ -64,19 +82,14 @@ Output should be similar to:
 ```
 Time taken to start transfer: 2.005132
 ```
+Refresh the browser and you can see the timeouts from Kiali
 
 ![](../../../images/03-timeouts.png)
 
+
 ### Reset the environment
 
-Reset the `catalogdetail` and `productcatalog` deployment with the following instructions and then 
-run the same steps as in the [`Initial state setup`](../README.md)to reset 
-the environment for testing the remaining features.
-
-```sh 
-kubectl delete deployment -n workshop catalogdetail productcatalog
-helm upgrade mesh-basic ../../01-getting-started/ -n workshop
-```
+Run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment.
 
 ## Retries:
 
@@ -96,7 +109,9 @@ deployment:
 
 To apply these changes, run the following command:
 
-```sh 
+```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder
+
 kubectl apply -f ./retries/
 
 kubectl get deployment -n workshop productcatalog -o json |
@@ -142,14 +157,7 @@ very first attempt at connecting to the service.
 
 ### Reset the environment
 
-Reset the `productcatalog` deployment with the following instructions and then 
-run the same steps as in the [`Initial state setup`](../README.md) to reset 
-the environment for testing the remaining features.
-
-```sh 
-kubectl delete deployment -n workshop productcatalog
-helm upgrade mesh-basic ../../01-getting-started/ -n workshop
-```
+Run the same set of steps as in the [Initial state setup](../README.md#initial-state-setup) to reset the environment.
 
 ## Circuit Breaking
 
@@ -158,6 +166,8 @@ To test the circuit-breaker functionality we will make the following changes:
 configuration
 
 ```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder
+
 kubectl apply -f ./circuitbreaking/
 ```
 
@@ -395,6 +405,8 @@ cluster.outbound|3000||catalogdetail.workshop.svc.cluster.local.upstream_rq_pend
 As can be seen in the the output above `upstream_rq_pending_overflow` has a value 
 of 17, which means 17 calls so far have been flagged for circuitbreaking proving 
 that our circuit-breaker configuration to the `catalogdetail` DestinationRule worked.
+
+![](../../../images/03-circuitbreaking.png)
 
 ### Reset the environment
 

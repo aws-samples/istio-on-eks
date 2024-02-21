@@ -30,17 +30,25 @@ cd timeouts-retries-circuitbreaking
 kubectl apply -f ./timeouts/catalogdetail-virtualservice.yaml
 ```
 
-Test for the delay in accessing the application:
+Test the delay by running a curl command against the productcatalog service from within the mesh.
 
 ```sh  
-export ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+# Set the FE_POD_NAME variable to the name of the frontend pod in the workshop namespace
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
 
-curl $ISTIO_INGRESS_URL -s -o /dev/null -w  "%{time_starttransfer}\n"
+# Access the frontend container in the workshop namespace interactively
+
+kubectl exec -it ${FE_POD_NAME} -n workshop -c frontend -- bash
+
+root@frontend-container-id:/app#
+# Allows accessing the shell inside the frontend container for executing commands
+
+curl http://productcatalog:5000/products/ -s -o /dev/null -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
 If the delay configuration is applied correctly, the output should be similar to:
 
 ```
-5.022975
+Time taken to start transfer: 5.024133
 ```
 
 #### Testing Timeouts
@@ -48,6 +56,8 @@ If the delay configuration is applied correctly, the output should be similar to
 Apply the timeout configuration to the [`productcatalog`](./timeouts/productcatalog-virtualservice.yaml) VirtualService
 
 ```sh
+# This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder
+
 kubectl apply -f ./timeouts/productcatalog-virtualservice.yaml
 ```
 
@@ -55,34 +65,20 @@ Test the timeout by running a `curl` command against the `productcatalog` servic
 from within the mesh.
 
 ```sh
-# Set the FE_POD_NAME variable to the name of the frontend pod in the workshop namespace
-
-export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
-```
-
-```sh
 # Access the frontend container in the workshop namespace interactively
 
-kubectl -n workshop exec -it ${FE_POD_NAME} -c frontend bash
-```
-Output should be similar to:
-
-```sh
+kubectl exec -it ${FE_POD_NAME} -n workshop -c frontend -- bash
 root@frontend-container-id:/app#
-
 # Allows accessing the shell inside the frontend container for executing commands
-```
-Run the curl command  
 
-```sh
 curl http://productcatalog:5000/products/ -s -o /dev/null -w "Time taken to start transfer: %{time_starttransfer}\n"
 ```
+
 Output should be similar to:
 
 ```
-Time taken to start transfer: 2.005132
+Time taken to start transfer: 2.006172
 ```
-Refresh the browser and you can see the timeouts from Kiali
 
 ![](../../../images/03-timeouts.png)
 
@@ -121,10 +117,8 @@ jq '.spec.template.spec.containers[0].readinessProbe={exec:{command:["sh","-c","
 kubectl apply --force=true -f -
 ```
 
-### Testing 
-
-Enable `debug` mode for the envoy logs of `productcatalog` service with the 
-command below:
+Enable debug mode for the envoy logs of productcatalog service with the command below in another (2nd) terminal 
+(Note: This assumes that you are currently in "istio-on-eks/modules/03-network-resiliency/timeouts-retries-circuitbreaking" folder and istioctl is installed in the another (2nd) terminal as well).
 
 ```sh
 istioctl pc log --level debug -n workshop deploy/productcatalog
@@ -132,14 +126,21 @@ istioctl pc log --level debug -n workshop deploy/productcatalog
 
 #### Testing Retries
 
-Refresh the browser and look at the logs to see the number of retries 
+To see the retries functionality from the logs, go back to the original (1st) terminal and enter the below command 
 
 ```sh
 kubectl -n workshop logs -l app=productcatalog -c istio-proxy -f | 
 grep "x-envoy-attempt-count"
 ```
+and from another (2nd) terminal, run the curl command against the productcatalog service from within the mesh by using the below command
 
-Output should be similar: 
+```sh
+export FE_POD_NAME=$(kubectl get pods -n workshop -l app=frontend -o jsonpath='{.items[].metadata.name}')
+kubectl exec -it ${FE_POD_NAME} -n workshop -c frontend -- bash
+curl http://productcatalog:5000/products/ -s -o /dev/null
+```
+
+Now, you can see the retries from logs as below in the original (1st) terminal. 
 
 ``` 
 'x-envoy-attempt-count', '1'
@@ -197,7 +198,7 @@ kubectl exec fortio -n workshop -c fortio -- /usr/bin/fortio \
 curl http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail
 ```
 
-Output should be similar to below:
+You can see the request succeeded as below. 
 
 ```
 {"ts":1704746733.172561,"level":"info","r":1,"file":"scli.go","line":123,"msg":"Starting","command":"Φορτίο","version":"1.60.3 h1:adR0uf/69M5xxKaMLAautVf9FIVkEpMwuEWyMaaSnI0= go1.20.10 amd64 linux"}

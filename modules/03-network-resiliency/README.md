@@ -38,8 +38,8 @@ virtualservice.networking.istio.io/productcatalog created
 
 ## 🧱 Sub Modules of Network Resiliency
 
-### [1. Timeout, Retries and Circuit Breaking](timeouts-retries-circuitbreaking/README.md)
-### [2. Fault Injection](fault-injection/README.md)
+### [1. Fault Injection](fault-injection/README.md)
+### [2. Timeout, Retries and Circuit Breaking](timeouts-retries-circuitbreaking/README.md)
 ### [3. Rate Limiting](rate-limiting/README.md)
 
 

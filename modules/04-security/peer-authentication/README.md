@@ -2,79 +2,42 @@
 
 This sub-module focuses on enforcing mutual TLS using AWS Private CA for **Peer Authentication** on Amazon EKS.
 
-This will be achieved through [`cert-manager`](https://cert-manager.io/) integrations.
+This is achieved through [`cert-manager`](https://cert-manager.io/) integrations.
 
-The below projects will be used to integrate Istio with AWS Private CA:
+The below projects are used to integrate Istio with AWS Private CA:
 
-  * [aws-privateca-issuer](https://github.com/cert-manager/aws-privateca-issuer/tree/main) - addon for cert-manager that issues certificates using AWS ACM PCA
-  * [istio-csr](https://github.com/cert-manager/istio-csr) - an agent that allows for Istio workload and control plane components to be secured using cert-manager
-
-## Deploy
+  * [`aws-privateca-issuer`](https://github.com/cert-manager/aws-privateca-issuer/tree/main) - addon for cert-manager that issues certificates using AWS ACM PCA
+  * [`istio-csr`](https://github.com/cert-manager/istio-csr) - an agent that allows for Istio workload and control plane components to be secured using cert-manager
 
 It is recommended to install all the dependencies for certificate management like `cert-manager`, `aws-privateca-issuer` and `istio-csr` before installing Istio control plane to avoid issues with CA migration. Refer to [Installing istio-csr After Istio](https://cert-manager.io/docs/usage/istio-csr/#installing-istio-csr-after-istio) for more details.
 
-### Uninstall Istio
+### AWS Private CA
 
-Navigate to the previously cloned `terraform-aws-eks-blueprints` project directory and uninstall Istio using `terraform destroy` command.
+The peer authentication section uses AWS Private CA in short-lived mode to issue certificates to the mesh workloads for mutual TLS. Refer [Short-Lived CA Mode for Mutual TLS Between Workloads](https://aws.github.io/aws-eks-best-practices/security/docs/network/#short-lived-ca-mode-for-mutual-tls-between-workloads).
 
-```bash
-# The below directory path assumes that the current working directory
-# is `istio-on-eks/modules/04-security`.
-# Also it is assumed that the `terraform-aws-eks-blueprints`
-# project is cloned in the same parent directory as `istio-on-eks`.
-# Change the directory path based on your current directory.
-cd ../../../terraform-aws-eks-blueprints/patterns/istio
-terraform destroy -target='kubernetes_namespace_v1.istio_system' -auto-approve
-```
+Note that your account is charged a monthly price for each private CA starting from the time that you create it. You are also charged for each certificate that is issued by the Private CA. Refer to [AWS Private CA Pricing](https://aws.amazon.com/private-ca/pricing/) for more details.
 
-### Install dependencies for certificate management
+### Istio Mutual TLS Certificate Workflow
 
-Now that Istio is uninstalled navigate back to the security module directory to continue with the certificate management dependency installation steps.
+#### Default Behavior
 
-```bash
-# The below directory path assumes that terraform-aws-eks-blueprints and istio-on-eks projects are cloned in the same parent directory
-cd ../../../istio-on-eks/modules/04-security
-```
+By default, Istio creates its own CA to issue control plane and workload certificates that identify workload proxies. When a workload starts its envoy proxy requests a certificate from the istio control plane via `istio-agent`.
 
-The peer authentication section uses AWS Private CA to issue certificates to the mesh workloads and the ingress gateway load balancer. Note that your account is charged a monthly price for each private CA starting from the time that you create it. You are also charged for each certificate that is issued by the Private CA. Refer to [AWS Private CA Pricing](https://aws.amazon.com/private-ca/pricing/) for more details.
+![Default certificate signing workflow in Istio](https://aws.github.io/aws-eks-best-practices/security/docs/images/default-istio-csr-flow.png)
 
-By default the terraform setup module will create a new Private CA resource. You can override this by exporting a well known variable pointing to the
-ARN of an existing Private CA.
+*Figure: [How Certificate Signing Works in Istio (Default)](https://aws.github.io/aws-eks-best-practices/security/docs/network/#how-certificate-signing-works-in-istio-default)*
 
-Run the below terraform commands to setup the resources for peer authentication.
+#### Integrated with AWS PCA
 
-*If setting up with a new Private CA resource:*
+For this module the default Istio CA is disabled. The control plane and the proxy agents are configured to forward all certificate requests to `istio-csr`. `istio-csr` in turn forwards the request to `cert-manager` to issue the certificates from AWS Private CA via `aws-privateca-issuer`.
 
-```bash
-terraform init
-terraform apply -target='module.setup_peer_authentication' -auto-approve
-```
+![How Certificate Signing Works in Istio with ACM Private CA](https://aws.github.io/aws-eks-best-practices/security/docs/images/istio-csr-with-acm-private-ca.png)
 
-*or to point to an existing Private CA:*
+*Figure: [How Certificate Signing Works in Istio with ACM Private CA](https://aws.github.io/aws-eks-best-practices/security/docs/network/#how-certificate-signing-works-in-istio-with-acm-private-ca)*
 
-```bash
-terraform init
-export TF_VAR_aws_privateca_arn=arn:aws:acm-pca:{region}:{account-id}:certificate-authority/{id}
-terraform apply -target='module.setup_peer_authentication' -auto-approve
-```
+## Prerequisites
 
-**Note:** Replace the placeholders for region (`{region}`), account id (`{account-id}`) and certificate id (`{id}`) in the above environment variable export command.
-
-This will first install the necessary dependencies and then reinstall Istio with updated TLS settings. Once the resources have been provisioned, you will need to replace the `istio-ingress` pods due to a [`istiod` dependency issue](https://github.com/istio/istio/issues/35789). Use the following command to perform a rolling restart of the `istio-ingress` pods:
-
-```sh
-kubectl rollout restart deployment istio-ingress -n istio-ingress
-```
-
-Reinstall the Istio observability addons.
-
-```sh
-for ADDON in kiali jaeger prometheus grafana
-do
-    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/$ADDON.yaml"
-    kubectl apply -f $ADDON_URL
-done
-```
+**Note:** Make sure that the required resources have been created following the [setup instructions](../README.md#setup).
 
 ## Validate
 
@@ -112,7 +75,7 @@ istio-ingress-845d676c6b-rsh8c   1/1     Running   0          83s
 Verify that AWS PrivateCA Issuer named `root-ca` is `Ready`.
 
 ```bash
-kubectl get awspcaissuer/root-ca -n istio-system \
+kubectl get awspcaclusterissuer/root-ca \
   -o custom-columns='NAME:.metadata.name,CONDITION_MSG:.status.conditions[*].message,CONDITION_REASON:.status.conditions[*].reason,CONDITION_STATUS:.status.conditions[*].status,CONDITION_TYPE:.status.conditions[*].type'
 ```
 
@@ -155,10 +118,10 @@ Certificate:
     Data:
         ...
         Signature Algorithm: sha512WithRSAEncryption
-        Issuer: CN = Istio on EKS PrivateCA
+        Issuer: CN = istio-on-eks-04-security
         Validity
-            Not Before: Apr 17 15:33:12 2024 GMT
-            Not After : Jul 16 16:33:12 2024 GMT
+            Not Before: Apr 22 09:18:48 2024 GMT
+            Not After : Apr 29 10:18:47 2024 GMT
         Subject: O = cert-manager, CN = istio-ca
         ...
         X509v3 extensions:
@@ -176,63 +139,51 @@ In the output, note that the certificate is a CA certificate and the Organizatio
 Setup environment variables to inspect the workload TLS settings.
 
 ```bash
-# Set namespace for sample application
 export NAMESPACE=workshop
-# Set env var for the value of the app label in manifests
 export APP=frontend
 ```
 
-In a separate terminal window you should now follow the logs for cert-manager:
+In a separate terminal window follow the `cert-manager` logs for certificate requests being approved and issued by `cert-manager`. The below command follows the log since the previous two minutes.
 
 ```bash
 kubectl logs -n cert-manager $(kubectl get pods -n cert-manager -o jsonpath='{.items..metadata.name}' --selector app=cert-manager) --since 2m -f
 ```
 
-In another separate terminal window, lets watch the istio-system namespace for certificaterequests:
+In another separate terminal window start a watch on the certificate requests being generated in the `istio-system` namespace by running the below command.
 
 ```bash
 kubectl get certificaterequests.cert-manager.io -n istio-system -w
 ```
 
-Now in the original terminal window deploy the workshop helm chart following the instructions in [Module 1: Deploy](/modules/01-getting-started/README.md#deploy).
+Now in the original terminal window where you have created the environment variables patch the frontend deployment to enable proxy debug logs.
 
-You should see something similar to the output here for `certificaterequests` as the application pods are materialized.
+```bash
+kubectl patch deployment/$APP -n $NAMESPACE --type=merge --patch='{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/logLevel":"debug"}}}}}'
+```
+
+In a few seconds you should see events similar to the output here for `certificaterequests` as the application pod is materialized.
 
 ```
-istio-csr-czrhx                               istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-czrhx   True                        istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-czrhx   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-czrhx   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-xwwzs                               istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-xwwzs   True                        istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-mt8dn                               istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-mt8dn   True                        istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-r82vl                               istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-xwwzs   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   1s
-istio-csr-r82vl   True                        istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-mt8dn   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-xwwzs   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   1s
-istio-csr-mt8dn   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-r82vl   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
-istio-csr-r82vl   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
+NAME         APPROVED   DENIED   READY   ISSUER     REQUESTOR                                         AGE
+istio-ca-1   True                True    root-ca    system:serviceaccount:cert-manager:cert-manager   71m
+istiod-3     True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager   11m
+istio-csr-pld72                               istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
+istio-csr-pld72   True                        istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
+istio-csr-pld72   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
+istio-csr-pld72   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
 ```
 
 The key requests being `istio-csr-czrhx`, `istio-csr-xwwzs`, `istio-csr-mt8dn`, and `istio-csr-r82vl` corresponding
 to the four application pods in the example output.
-The `cert-manager` log output for two log lines for each request being "Approved" and "Ready":
+
+The `cert-manager` log output should show two log lines for each request being "Approved" and "Ready":
 
 ```
-I0417 17:10:37.345804       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-czrhx" condition "Approved" to 2024-04-17 17:10:37.345791712 +0000 UTC m=+2275.578687711
-I0417 17:10:37.376320       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-czrhx" condition "Ready" to 2024-04-17 17:10:37.376309942 +0000 UTC m=+2275.609205934
-I0417 17:10:48.665420       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-xwwzs" condition "Approved" to 2024-04-17 17:10:48.665408707 +0000 UTC m=+2286.898304707
-I0417 17:10:49.410183       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-mt8dn" condition "Approved" to 2024-04-17 17:10:49.410172176 +0000 UTC m=+2287.643068174
-I0417 17:10:49.478161       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-xwwzs" condition "Ready" to 2024-04-17 17:10:49.478148037 +0000 UTC m=+2287.711044034
-I0417 17:10:49.553203       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-r82vl" condition "Approved" to 2024-04-17 17:10:49.553191856 +0000 UTC m=+2287.786087890
-I0417 17:10:49.556293       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-mt8dn" condition "Ready" to 2024-04-17 17:10:49.556280951 +0000 UTC m=+2287.789176953
-I0417 17:10:49.836643       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-r82vl" condition "Ready" to 2024-04-17 17:10:49.836631125 +0000 UTC m=+2288.069527118
+I0422 11:32:12.017941       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-pld72" condition "Approved" to 2024-04-22 11:32:12.017929879 +0000 UTC m=+4483.188998549
+I0422 11:32:12.062274       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-pld72" condition "Ready" to 2024-04-22 11:32:12.062263818 +0000 UTC m=+4483.233332478
 ```
 
-Verify that all workload pods are running with both the application container and the sidecar.
+Verify that all workload pods are running with both the application container and the sidecar. Wait until all terminating pods are cleaned up.
 
 ```bash
 kubectl get pods -n $NAMESPACE
@@ -241,7 +192,7 @@ kubectl get pods -n $NAMESPACE
 To validate that the `istio-proxy` sidecar container has requested the certificate from the correct service, check the container logs:
 
 ```bash
-kubectl logs $(kubectl get pod -n $NAMESPACE -o jsonpath="{.items...metadata.name}" --selector app=$APP) -c istio-proxy -n $NAMESPACE | grep cert-manager
+kubectl logs $(kubectl get pod -n $NAMESPACE -o jsonpath="{.items...metadata.name}" --selector app=$APP) -c istio-proxy -n $NAMESPACE | grep 'cert-manager-istio-csr.cert-manager.svc:443'
 ```
 
 There should be matching log lines similar to the sample output below.
@@ -311,7 +262,7 @@ Effective PeerAuthentication:
 Skipping Gateway information (no ingress gateway pods)
 ```
 
-Open the Kiali dashboard.
+In a separate terminal window open the Kiali dashboard.
 
 ```bash
 istioctl dashboard kiali
@@ -369,12 +320,6 @@ You can also check this by hovering your mouse over the Lock icon in the Kiali b
 
 Next we will run curl commands from another pod to test and verify that mTLS is enabled. While we already confirmed that configuration with the `istioctl` command, we need to look at debug logs to confirm that everything is working as expected. First we need to determine which pods are running so we know what to test. We'll try the frontend pod, where we will need both the pod name as well as the corresponding Istio sidecar. Let's get the full name of the pod, so we can enable debug logs on it. Note that your pod name will be different from mine.
 
-Let's use the `istioctl` command to enable debug logs for the frontend pod.
-
-```bash
-istioctl pc log $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP).workshop --level debug
-```
-
 Next, lets find the specific service we want to test, in this case, frontend.
 
 ```bash
@@ -390,7 +335,7 @@ frontend   ClusterIP   172.20.207.162   <none>        9000/TCP   27m
 
 Now run a pod with curl to try and reach the `frontend` service.
 
-```
+```bash
 kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
@@ -415,7 +360,7 @@ The output should be similar to the sample output below.
 curl: (56) Recv failure: Connection reset by peer
 ```
 
-Terminate the container shell session.
+Exit out of the container shell session.
 
 Next, search the proxy debug log to verify that tls mode (`socket tlsMode-istio`) has been selected for proxy connections to the workload pods.
 
@@ -434,7 +379,7 @@ There should be matches similar to below snippet.
 2024-04-17T17:38:00.215464Z     debug   envoy upstream external/envoy/source/common/upstream/upstream_impl.cc:426       transport socket match, socket tlsMode-istio selected for host with address 10.0.43.244:9000    thread=15
 ```
 
-Verify the pod IPs.
+Verify the application pod IPs match the log lines.
 
 ```bash
 kubectl get pods -n $NAMESPACE -o custom-columns='NAME:metadata.name,PodIP:status.podIP'
@@ -452,26 +397,82 @@ productcatalog-64848f7996-62r74   10.0.37.163
 
 ### Validate Ingress Gateway TLS settings
 
-Patch the application gateway definition to add a server route for HTTPS traffic on port 443.
+Typically to protect publicly accessible `istio-ingress` service load balancer endpoints on the internet you would issue certificates from a well-known, trusted third party root CA or an intermediate CA and associate it with the load balancer HTTPS listener. Refer to [Issuing and managing certificates using AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html) for issuing or importing certificates. Refer to [AWS Load Balancer Controller service annotations TLS](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/service/annotations/#tls) section for details on how to associate ACM certificates with service load balancer listeners using service annotations.
+
+You can also import certificates issued by AWS Private CA configured in standard mode into ACM. AWS Private CA configured in short-lived mode is not supported.
+However, for this module a self-signed certificate is used for the internet facing `istio-ingress` load balancer endpoint to avoid creating another Private CA resource. The self-signed certificate has been generated and imported into ACM. The generated PEM-encoded self-signed certificate (`lb_ingress_cert.pem`) is also exported in the module directory (`04-security`).
+
+As part of the setup process the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service. Describe the service to verify the annotations.
 
 ```bash
-kubectl patch gateway/productapp-gateway \
-  -n workshop \
-  --type=json \
-  --patch='[{"op":"add","path":"/spec/servers/-","value":{"hosts":["*"],"port":{"name":"https","number":443,"protocol":"HTTP"}}}]'
+kubectl get svc/istio-ingress -n istio-ingress -o jsonpath='{.metadata.annotations}' | jq -r
+```
+
+The output should look similar to the below sample output.
+
+```json
+{
+  "meta.helm.sh/release-name": "istio-ingress",
+  "meta.helm.sh/release-namespace": "istio-ingress",
+  "service.beta.kubernetes.io/aws-load-balancer-attributes": "load_balancing.cross_zone.enabled=true",
+  "service.beta.kubernetes.io/aws-load-balancer-backend-protocol": "tcp",
+  "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type": "ip",
+  "service.beta.kubernetes.io/aws-load-balancer-scheme": "internet-facing",
+  "service.beta.kubernetes.io/aws-load-balancer-ssl-cert": "arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERT_ID",
+  "service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+  "service.beta.kubernetes.io/aws-load-balancer-ssl-ports": "https",
+  "service.beta.kubernetes.io/aws-load-balancer-type": "external"
+}
+```
+
+Note the below annotation values
+
+| Annotation | Value |
+|------------|-------|
+| `service.beta.kubernetes.io/aws-load-balancer-ssl-cert` | ARN of imported self-signed ACM certificate |
+| `service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy` | `ELBSecurityPolicy-TLS13-1-2-2021-06` |
+| `service.beta.kubernetes.io/aws-load-balancer-ssl-ports` | `https` |
+
+The application gateway definition is patched to add a server route for HTTPS traffic on port 443.
+Describe the `gateway` resource and verify that there are routes for port 80 and port 443 respectively.
+
+```bash
+kubectl get gateway/productapp-gateway -n workshop -o jsonpath='{.spec.servers}' | jq -r
 ```
 
 The output should be similar to below sample.
 
-```
-gateway.networking.istio.io/productapp-gateway patched
+```json
+[
+  {
+    "hosts": [
+      "*"
+    ],
+    "port": {
+      "name": "http",
+      "number": 80,
+      "protocol": "HTTP"
+    }
+  },
+  {
+    "hosts": [
+      "*"
+    ],
+    "port": {
+      "name": "https",
+      "number": 443,
+      "protocol": "HTTP"
+    }
+  }
+]
 ```
 
 Verify that the gateway is responding to HTTPS traffic using the exported PEM encoded CA certificate file from Private CA in the local directory.
 
 ```bash
 ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
-curl --cacert ca-cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+# Assuming current directory is 04-security/terraform
+curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -490,35 +491,6 @@ Check the status of each connection in Kiali. Navigate to the Graph tab and enab
 
 ![Application graph with auto mTLS](/images/04-kiali-auto-mtls-application-graph.png)
 
-## Clean up
+Congratulations!!! You've now successfully validated peer authentication setup in Istio on Amazon EKS. :tada:
 
-Clean up the resources set up in this section.
-
-```bash
-# Remove the patch for HTTPS route from application gateway resource
-kubectl patch gateway/productapp-gateway \
-  -n workshop \
-  --type=json \
-  --patch='[{"op":"remove","path":"/spec/servers/1"}]'
-
-# Clean up the resources created by terraform for peer authentication
-cd ../04-security
-terraform destroy -target='module.setup_peer_authentication' -auto-approve
-unset TF_VAR_aws_privateca_arn
-
-# Restore base istio installation
-cd ../../../terraform-aws-eks-blueprints/patterns/istio
-terraform apply -auto-approve
-kubectl rollout restart deployment istio-ingress -n istio-ingress
-for ADDON in kiali jaeger prometheus grafana
-do
-    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/$ADDON.yaml"
-    kubectl apply -f $ADDON_URL
-done
-
-# Restart the deployments
-kubectl rollout restart deployment/frontend -n workshop
-kubectl rollout restart deployment/productcatalog -n workshop
-kubectl rollout restart deployment/catalogdetail -n workshop
-kubectl rollout restart deployment/catalogdetail2 -n workshop
-```
+You can either move on to the other sub-modules or if you're done with this module then refer to [Clean up](../README.md#clean-up) to clean up all the resources provisioned in this module.

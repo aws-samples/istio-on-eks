@@ -22,7 +22,7 @@
 #contributors    @psour
 #date            2024-04-12
 #version         1.0
-#usage           ./helpers.sh [-a|--admin] [-c|--console] [-g|--generate -u|--user <APP_USER>] [-i|--inspect -t|--token <TOKEN>] [--authn] [--authz] [-n|--keycloak-namespace <KEYCLOAK_NAMESPACE>] [-r|--keycloak-realm <KEYCLOAK_REALM>] [-h|--help] [-v|--verbose]
+#usage           ./helpers.sh [-a|--admin] [-c|--console] [-g|--generate -u|--user <APP_USER>] [-i|--inspect -t|--token <TOKEN>] [-w|--wait-lb -l|--lb-arn-pattern <LB_ARN_PATTERN>] [--authn] [--authz] [-n|--keycloak-namespace <KEYCLOAK_NAMESPACE>] [-r|--keycloak-realm <KEYCLOAK_REALM>] [-h|--help] [-v|--verbose]
 #==============================================================================
 
 #### Resolve command line arguments
@@ -112,14 +112,14 @@ function print_usage() {
   echo "    -u, --user string                  Application username (required when -g|--generate is set)."
   echo "    -i, --inspect                      Inspect access token (requires -t|--token). This is a mutually exclusive option. See below for more details."
   echo "    -t, --token string                 Access token (required when -i|--inspect is set)."
-  echo "    --authn                            Apply RequestAuthentication manifest. This is a mutually exclusive option. See below for more details."
-  echo "    --authz                            Apply AuthorizationPolicy manifest. This is a mutually exclusive option. See below for more details."
   echo "    -w, --wait-lb                      Wait for load balancer endpoint to become healthy (requires -l|--lb-arn-pattern). This is a mutually exclusive option. See below for more details."
   echo "    -l, --lb-arn-pattern string        Load balancer ARN pattern (required when -w|--wait-lb is set)."
-  echo "    -c, --cluster-name string          Amazon EKS cluster name."
+  echo "    --authn                            Apply RequestAuthentication manifest. This is a mutually exclusive option. See below for more details."
+  echo "    --authz                            Apply AuthorizationPolicy manifest. This is a mutually exclusive option. See below for more details."
   echo "    -n, --keycloak-namespace string    Namespace for keycloak (default keycloak)."
   echo "    -r, --keycloak-realm string        Keycloak realm for workshop (default workshop)."
   echo "    -h, --help                         Show this help message."
+  echo "    -v, --verbose                      Enable verbose output."
   echo ""
   echo "**Mutually Exclusive Options:** Below options cannot appear together for an invocation of this command."
   echo "    -a, --admin"
@@ -413,12 +413,12 @@ function inspect_token() {
 
 function apply_requestauthentication() {
   if [ -n "$VERBOSE" ]; then
-  echo "Generating RequestAuthentication manifest from ${MODULE_DIR}/request-authn-authz/request-authentication/ingress-requestauthentication-template.yaml..."
+  echo "Generating RequestAuthentication manifest from ${MODULE_DIR}/request-authentication/ingress-requestauthentication-template.yaml..."
   fi
 
   resolve_keycloak_config
 
-  AUTH_DOC=$(sed "s#ISSUER#${ISSUER}#g" "${MODULE_DIR}/request-authn-authz/request-authentication/ingress-requestauthentication-template.yaml" \
+  AUTH_DOC=$(sed "s#ISSUER#${ISSUER}#g" "${MODULE_DIR}/request-authentication/ingress-requestauthentication-template.yaml" \
     | sed "s#JWKS_URI#${JWKS_URI}#g")
   if [ -n "$VERBOSE" ]; then
   echo "Generated manifest:"
@@ -431,13 +431,13 @@ function apply_requestauthentication() {
 
 function apply_authorizationpolicy() {
   if [ -n "$VERBOSE" ]; then
-  echo "Applying AuthorizationPolicy manifest $MODULE_DIR/request-authn-authz/request-authentication/ingress-authorizationpolicy.yaml..."
+  echo "Applying AuthorizationPolicy manifest $MODULE_DIR/request-authentication/ingress-authorizationpolicy.yaml..."
   echo "Manifest:"
   echo "-------------------"
-  cat "${MODULE_DIR}/request-authn-authz/request-authentication/ingress-authorizationpolicy.yaml"
+  cat "${MODULE_DIR}/request-authentication/ingress-authorizationpolicy.yaml"
   echo "-------------------"
   fi
-  kubectl apply -f "${MODULE_DIR}/request-authn-authz/request-authentication/ingress-authorizationpolicy.yaml"
+  kubectl apply -f "${MODULE_DIR}/request-authentication/ingress-authorizationpolicy.yaml"
 }
 
 function wait_for_load_balancer() {
@@ -482,7 +482,9 @@ function wait_for_load_balancer() {
 
   while [ "$TARGET_HEALTH" != "healthy" ]
   do
+    if [ -n "$VERBOSE" ]; then
     echo "Target health is $TARGET_HEALTH. Waiting 10 seconds."
+    fi
     sleep 10
     TARGET_HEALTH=$(aws elbv2 describe-target-health --target-group-arn "$TARGET_GRP_ARN" --query 'TargetHealthDescriptions[0].TargetHealth.State' --output text)
     CMD_RESULT=$?
@@ -491,7 +493,9 @@ function wait_for_load_balancer() {
     fi
   done
 
+  if [ -n "$VERBOSE" ]; then
   echo "Target health is $TARGET_HEALTH."
+  fi
 }
 
 # https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script

@@ -38,6 +38,16 @@ terraform {
       source = "hashicorp/local"
       version = "2.5.1"
     }
+
+    tls = {
+      source = "hashicorp/tls"
+      version = "4.0.5"
+    }
+
+    http = {
+      source = "hashicorp/http"
+      version = "3.4.2"
+    }
   }
 
   # ##  Used for end-to-end testing on project; update to suit your needs

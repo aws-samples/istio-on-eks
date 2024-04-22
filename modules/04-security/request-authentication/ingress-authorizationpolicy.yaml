@@ -14,5 +14,5 @@ spec:
         notRequestPrincipals: ["*"]
     to:
     - operation:
-        ports: ["80"]
+        ports: ["80","443"]
     

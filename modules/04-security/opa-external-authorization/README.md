@@ -43,16 +43,12 @@ The following sequence depicts the Istio data plane request/response flow.
 ### Disallow Requests with Missing Tokens
 Follow the steps in [Disallow requests with missing tokens](/modules/04-security/request-authn-authz/request-authentication/README.md#disallow-requests-with-missing-tokens) to reject requests with missing JWT tokens.
 
-### Install Gatekeeper
-This section will leverage [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature to inject OPA envoy external authorizer sidecar to the application pods.
+### Gatekeeper Mutations
+This section leverages [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature to inject OPA envoy external authorizer sidecar to the application pods.
 
-Follow the instructions below to install Gatekeeper.
+Gatekeeper is already installed in the cluster.
 
-```bash
-terraform apply -target='module.setup_opa_external_authorization' -auto-approve
-```
-
-Once the chart is installed verify that all the gatekeeper pods are running.
+Verify that all the gatekeeper pods are running.
 
 ```bash
 kubectl get all -n gatekeeper-system
@@ -82,7 +78,7 @@ replicaset.apps/gatekeeper-controller-manager-69d88fcd4f   3         3         3
 
 ### Create mutations to inject OPA external authorizer sidecar
 
-Once Gatekeeper is up and running add the `Assign` rules to inject the OPA server container as a sidecar
+Add the `Assign` rules to inject the OPA server container as a sidecar
 in the selected workload pods that you want to protect using external OPA based access control policies.
 
 The file [`opa-ext-authz-sidecar-assign.yaml`](/modules/04-security/request-authn-authz/opa-external-authorization/opa-ext-authz-sidecar-assign.yaml) contains the `Assign` rules.
@@ -190,7 +186,7 @@ Note the arguments for the `opa-istio` container above. A subset of the argument
 Apply the `Assign` rules in `opa-ext-authz-sidecar-assign.yaml` manifest file.
 
 ```bash
-kubectl apply -f ./request-authn-authz/opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
+kubectl apply -f ../opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -237,7 +233,7 @@ using the host name `opa-ext-authz-grpc.local`.
 Apply the manifest.
 
 ```bash
-kubectl apply -f ./request-authn-authz/opa-external-authorization/opa-ext-authz-serviceentry.yaml
+kubectl apply -f ../opa-external-authorization/opa-ext-authz-serviceentry.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -351,7 +347,7 @@ spec:
 Apply the AuthorizationPolicy.
 
 ```bash
-kubectl apply -f ./request-authn-authz/opa-external-authorization/productapp-authorizationpolicy.yaml
+kubectl apply -f ../opa-external-authorization/productapp-authorizationpolicy.yaml
 ```
 
 The output should look similar to the sample output below.
@@ -377,13 +373,13 @@ the bearer JWT tokens that contain embedded user roles in the `Authorization` HT
 The bearer tokens are minted via Keycloak using the helper script [`helpers.sh`](/modules/04-security/scripts/helpers.sh) like below.
 
 ```bash
-TOKEN=$(./scripts/helpers.sh -g -u alice)
+TOKEN=$(../scripts/helpers.sh -g -u alice)
 ```
 
 The minted tokens can then be inspected using the same helper script like below.
 
 ```bash
-./scripts/helpers.sh -i -t $TOKEN
+../scripts/helpers.sh -i -t $TOKEN
 ```
 
 #### Policy description
@@ -579,7 +575,7 @@ image injected as sidecar.
 #### Run tests using installed `opa` binary
 
 ```bash
-opa test ./request-authn-authz/opa-external-authorization/policy_test.rego ./request-authn-authz/opa-external-authorization/policy.rego
+opa test ../opa-external-authorization/policy_test.rego ../opa-external-authorization/policy.rego
 ```
 
 If the policy is written correctly then all the tests should pass and you should see an output similar to the sample output
@@ -594,7 +590,7 @@ PASS: xx/xx
 ```bash
 docker run \
   --name opa-istio \
-  -v ./request-authn-authz/opa-external-authorization/:/policy \
+  -v ./../opa-external-authorization/:/policy \
   --rm \
   openpolicyagent/opa:0.60.0-istio-static \
   test /policy/policy_test.rego /policy/policy.rego
@@ -633,7 +629,7 @@ generatorOptions:
 Apply the `Kustomization` to create the ConfigMap.
 
 ```bash
-kubectl apply -k ./request-authn-authz/opa-external-authorization/
+kubectl apply -k ../opa-external-authorization/
 ```
 
 The output should look similar to the sample output below.
@@ -753,8 +749,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u charlie)
-curl -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u charlie)
+curl --cacert ../lb_ingress_cert.pem --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -789,8 +785,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u alice)
-curl -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u alice)
+curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -825,8 +821,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u bob)
-curl -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u bob)
+curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -861,8 +857,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u charlie)
-curl -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u charlie)
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -897,8 +893,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u alice)
-curl -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u alice)
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -933,8 +929,8 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 
 ```bash
 REQ_ID=$RANDOM
-TOKEN=$(./scripts/helpers.sh -g -u bob)
-curl -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "${INGRESS_HOST}/products" -d "id=1" -d "name=Apples" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u bob)
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -d "id=1" -d "name=Apples" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -968,26 +964,20 @@ Clean up the resources set up in this section.
 
 ```bash
 # Delete the Assign rules
-kubectl delete -f ./request-authn-authz/opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
+kubectl delete -f ../opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
 # Clean up the ServiceEntry
-kubectl delete -f ./request-authn-authz/opa-external-authorization/opa-ext-authz-serviceentry.yaml
+kubectl delete -f ../opa-external-authorization/opa-ext-authz-serviceentry.yaml
 
 # Delete the opa-policy ConfigMap
-kubectl delete -k ./request-authn-authz/opa-external-authorization/
-
-# Remove GateKeeper resources
-terraform destroy -target='module.setup_opa_external_authorization' -auto-approve
+kubectl delete -k ../opa-external-authorization/
 
 # Remove AuthorizationPolicy
-kubectl delete -f ./request-authn-authz/opa-external-authorization/productapp-authorizationpolicy.yaml
+kubectl delete -f ../opa-external-authorization/productapp-authorizationpolicy.yaml
 
 # Deregister the extension provider
 kubectl get configmap/istio -n istio-system -o json \
   | sed 's/\\nextensionProviders:\\n- name: opa-ext-authz-grpc\\n  envoyExtAuthzGrpc:\\n    service: opa-ext-authz-grpc.local\\n    port: 9191//' \
   | kubectl apply -f -
-
-# Remove keycloak resources
-terraform destroy -target='module.setup_request_authn_authz' -auto-approve
 
 # Remove the auto-injection label
 kubectl label namespace workshop opa-istio-injection-
@@ -999,4 +989,6 @@ kubectl rollout restart deployment/catalogdetail -n workshop
 kubectl rollout restart deployment/catalogdetail2 -n workshop
 ```
 
-Clean up the resources following the instructions in [Security - Request Authentication ## Clean up](/modules/04-security/request-authn-authz/request-authentication/README.md#clean-up)
+Congratulations!!! You've now successfully validated OPA based external authorization setup in Istio on Amazon EKS. :tada:
+
+You can either move on to the other sub-modules or if you're done with this module then refer to [Clean up](../README.md#clean-up) to clean up all the resources provisioned in this module.

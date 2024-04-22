@@ -6,64 +6,10 @@ locals {
   user_creation_timestamp       = time_static.activation_date.unix * 1000
 }
 
-
-resource "kubernetes_namespace_v1" "external_secrets" {
-  metadata {
-    name = "external-secrets"
-  }
-}
-
 resource "kubernetes_namespace_v1" "keycloak" {
   metadata {
     name = local.keycloak_namespace
   }
-}
-
-module "ebs_csi_driver_irsa" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.32.1"
-
-  create_kubernetes_namespace       = false
-  create_kubernetes_service_account = false
-  kubernetes_namespace              = "kube-system"
-  kubernetes_service_account        = "ebs-csi-controller-sa"
-  irsa_iam_policies = [
-    "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  ]
-
-  eks_cluster_id        = var.eks_cluster_config.name
-  eks_oidc_provider_arn = var.eks_cluster_config.oidc_provider_arn
-}
-
-module "eks_blueprints_addons" {
-  source  = "aws-ia/eks-blueprints-addons/aws"
-  version = "~> 1.16.2"
-
-  cluster_name      = var.eks_cluster_config.name
-  cluster_endpoint  = var.eks_cluster_config.endpoint
-  cluster_version   = var.eks_cluster_config.version
-  oidc_provider_arn = var.eks_cluster_config.oidc_provider_arn
-
-  # EKS Add-on
-  eks_addons = {
-    aws-ebs-csi-driver = {
-      preserve                 = false
-      service_account_role_arn = module.ebs_csi_driver_irsa.irsa_iam_role_arn
-    }
-  }
-
-  # Add-ons
-  enable_external_secrets = true
-  external_secrets_secrets_manager_arns = [
-    aws_secretsmanager_secret.keycloak_admin.arn,
-    aws_secretsmanager_secret.workshop_realm.arn
-  ]
-  external_secrets = {
-    namespace        = kubernetes_namespace_v1.external_secrets.metadata[0].name
-    create_namespace = false
-  }
-
-  enable_secrets_store_csi_driver              = true
-  enable_secrets_store_csi_driver_provider_aws = true
 }
 
 resource "random_password" "keycloak_passwords" {
@@ -224,6 +170,17 @@ resource "aws_secretsmanager_secret_version" "workshop_realm" {
   }))
 }
 
+resource "kubernetes_storage_class_v1" "ebs_sc" {
+  metadata {
+    name = "ebs-sc"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+  volume_binding_mode = "WaitForFirstConsumer"
+
+  depends_on = [module.eks_blueprints_addons]
+}
+
+
 resource "kubectl_manifest" "keycloak_admin_secretstore" {
   yaml_body = yamlencode({
     apiVersion = "external-secrets.io/v1beta1"
@@ -242,7 +199,10 @@ resource "kubectl_manifest" "keycloak_admin_secretstore" {
     }
   })
 
-  depends_on = [aws_secretsmanager_secret_version.keycloak_admin]
+  depends_on = [
+    module.eks_blueprints_addons,
+    aws_secretsmanager_secret_version.keycloak_admin
+  ]
 }
 
 resource "kubectl_manifest" "keycloak_admin_externalsecret" {
@@ -279,16 +239,6 @@ resource "kubectl_manifest" "keycloak_admin_externalsecret" {
     aws_secretsmanager_secret_version.keycloak_admin,
     kubectl_manifest.keycloak_admin_secretstore,
   ]
-}
-
-resource "kubernetes_storage_class_v1" "ebs_sc" {
-  metadata {
-    name = "ebs-sc"
-  }
-  storage_provisioner = "ebs.csi.aws.com"
-  volume_binding_mode = "WaitForFirstConsumer"
-
-  depends_on = [module.eks_blueprints_addons]
 }
 
 #########
@@ -330,8 +280,8 @@ module "keycloak_serviceaccount_irsa" {
     aws_iam_policy.keycloak_serviceaccount_policy.arn
   ]
 
-  eks_cluster_id        = var.eks_cluster_config.name
-  eks_oidc_provider_arn = var.eks_cluster_config.oidc_provider_arn
+  eks_cluster_id        = module.eks.cluster_name
+  eks_oidc_provider_arn = module.eks.oidc_provider_arn
 }
 #########
 
@@ -357,7 +307,10 @@ resource "kubectl_manifest" "app_realm_secrets_store_csi" {
     }
   })
 
-  depends_on = [aws_secretsmanager_secret_version.workshop_realm]
+  depends_on = [
+    module.eks_blueprints_addons,
+    aws_secretsmanager_secret_version.workshop_realm
+  ]
 }
 
 resource "helm_release" "keycloak" {
@@ -439,16 +392,15 @@ resource "helm_release" "keycloak" {
   timeout = 10 * 60
 
   depends_on = [
-    kubernetes_storage_class_v1.ebs_sc,
+    module.eks_blueprints_addons,
     kubectl_manifest.keycloak_admin_externalsecret,
-    aws_secretsmanager_secret_version.workshop_realm,
     kubectl_manifest.app_realm_secrets_store_csi
   ]
 }
 
 resource "null_resource" "keycloak_lb_healthy" {
   provisioner "local-exec" {
-    command     = "./scripts/helpers.sh --wait-lb --lb-arn-pattern 'loadbalancer/net/k8s-keycloak-keycloak-'"
+    command     = "../scripts/helpers.sh --wait-lb --lb-arn-pattern 'loadbalancer/net/k8s-keycloak-keycloak-'"
     interpreter = ["/bin/bash", "-c"]
     environment = {
       AWS_REGION = var.aws_region

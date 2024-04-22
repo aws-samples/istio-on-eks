@@ -51,7 +51,7 @@ separator, to be present in the request and deny all other requests.
 The [request authentication template](./ingress-requestauthentication-template.yaml) contains `ISSUER` and `JWKS_URI` placeholders that are replaced by the helper script. Apply request authentication policy to the ingress gateway.
 
 ```bash
-./scripts/helpers.sh --authn
+../scripts/helpers.sh --authn
 ```
 
 The output should look similar to the sample output below.
@@ -110,13 +110,13 @@ export INGRESS_HOST=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath
 Generate a token for user `alice`.
 
 ```bash
-TOKEN=$(./scripts/helpers.sh -g -u alice)
+TOKEN=$(../scripts/helpers.sh -g -u alice)
 ```
 
 Inspect the generated access token using the helper script.
 
 ```bash
-./scripts/helpers.sh -i -t $TOKEN
+../scripts/helpers.sh -i -t $TOKEN
 ```
 
 The decoded JWT output should look similar to below.
@@ -163,8 +163,8 @@ Note the values of the issuer (`iss`) and audience (`aud`) claims. These match t
 Send a request to the ingress endpoint setting the generated token in the authorization header.
 
 ```bash
-TOKEN=$(./scripts/helpers.sh -g -u alice)
-curl --header "Authorization: Bearer $TOKEN" "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+TOKEN=$(../scripts/helpers.sh -g -u alice)
+curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -181,7 +181,7 @@ Generate a bogus token and send a request to the application endpoint.
 
 ```bash
 TOKEN=bogus
-curl --header "Authorization: Bearer $TOKEN" "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -195,7 +195,7 @@ HTTP Response: 401
 Send a request to the application endpoint with no bearer token.
 
 ```bash
-curl "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -211,7 +211,7 @@ A [deny AuthorizationPolicy](./ingress-authorizationpolicy.yaml) is used to reje
 Apply the authorization policy.
 
 ```bash
-./scripts/helpers.sh --authz
+../scripts/helpers.sh --authz
 ```
 
 The output should look similar to the sample output below.
@@ -236,10 +236,10 @@ Annotations:  <none>
 API Version:  security.istio.io/v1
 Kind:         AuthorizationPolicy
 Metadata:
-  Creation Timestamp:  2024-04-17T20:00:39Z
-  Generation:          1
-  Resource Version:    70561
-  UID:                 357bba83-92cf-4638-9f2d-3abe305f1f0b
+  Creation Timestamp:  2024-04-22T13:05:34Z
+  Generation:          2
+  Resource Version:    62695
+  UID:                 6b785539-2e4b-4b9b-b890-61132c7b7dd3
 Spec:
   Action:  DENY
   Rules:
@@ -251,16 +251,19 @@ Spec:
       Operation:
         Ports:
           80
+          443
   Selector:
     Match Labels:
       Istio:  ingressgateway
 Events:       <none>
 ```
 
+Note that both ports 80 and 443 are referred in the `AuthorizationPolicy`
+
 Send another request to the application endpoint with no bearer token.
 
 ```bash
-curl "$INGRESS_HOST" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -269,16 +272,6 @@ The output should look similar to the sample output below.
 HTTP Response: 403
 ```
 
-## Clean up
+Congratulations!!! You've now successfully validated request authentication setup in Istio on Amazon EKS. :tada:
 
-Clean up the resources set up in this section.
-
-```bash
-# Delete the AuthorizationPolicy object
-kubectl delete AuthorizationPolicy/istio-ingress -n istio-ingress
-kubectl delete RequestAuthentication/istio-ingress -n istio-ingress
-
-terraform destroy -target='module.setup_request_authn_authz' -auto-approve
-```
-
-Clean up the remaining resources following the instructions in [Security - Request Authentication & Authorization ## Clean up](/modules/04-security/request-authn-authz/README.md#clean-up)
+You can either move on to the other sub-modules or if you're done with this module then refer to [Clean up](../README.md#clean-up) to clean up all the resources provisioned in this module.

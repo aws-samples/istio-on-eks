@@ -173,8 +173,7 @@ istio-csr-pld72   True                True    istio-ca   system:serviceaccount:c
 istio-csr-pld72   True                True    istio-ca   system:serviceaccount:cert-manager:cert-manager-istio-csr   0s
 ```
 
-The key requests being `istio-csr-czrhx`, `istio-csr-xwwzs`, `istio-csr-mt8dn`, and `istio-csr-r82vl` corresponding
-to the four application pods in the example output.
+The key events are related to the certificate request named `istio-csr-pld72` corresponding to the `frontend` pod in the example output.
 
 The `cert-manager` log output should show two log lines for each request being "Approved" and "Ready":
 
@@ -183,7 +182,7 @@ I0422 11:32:12.017941       1 conditions.go:263] Setting lastTransitionTime for 
 I0422 11:32:12.062274       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-pld72" condition "Ready" to 2024-04-22 11:32:12.062263818 +0000 UTC m=+4483.233332478
 ```
 
-Verify that all workload pods are running with both the application container and the sidecar. Wait until all terminating pods are cleaned up.
+Verify that all workload pods are running with both the application and sidecar containers reporting ready to serve requests. Wait until all terminating pods are cleaned up.
 
 ```bash
 kubectl get pods -n $NAMESPACE
@@ -236,10 +235,9 @@ Certificate:
 
 This section will demonstrate the steps needed to validate and enforce Mutual Transport Layer Security (mTLS) for peer authentication between workloads.
 
-By default, Istio will use mTLS for all workloads with proxies configured, however it will also allow plain text.  When the X-Forwarded-Client-Cert header is there, Istio will use mTLS, and when it is missing, it implies that the requests are in plain text.
+By default, Istio will use mTLS for all workloads with proxies configured, however it will also allow plain text.  When the `X-Forwarded-Client-Cert` header is present in the request, Istio will use mTLS, and when it is missing, it implies that the requests are in plain text.
 
 ![Sidecar mTLS connections](/images/04-peer-authentication-mtls-sidecar-connections.png)
-
 
 Verify if mTLS is in Permissive mode (uses mTLS when available but allows plain text) or Strict mode (mTLS required). Note the value for "Workload mTLS mode" should show `PERMISSIVE`.
 
@@ -318,28 +316,28 @@ You can also check this by hovering your mouse over the Lock icon in the Kiali b
 
 ## Validation
 
-Next we will run curl commands from another pod to test and verify that mTLS is enabled. While we already confirmed that configuration with the `istioctl` command, we need to look at debug logs to confirm that everything is working as expected. First we need to determine which pods are running so we know what to test. We'll try the frontend pod, where we will need both the pod name as well as the corresponding Istio sidecar. Let's get the full name of the pod, so we can enable debug logs on it. Note that your pod name will be different from mine.
+Next, run `curl` command from another pod to test and verify that mTLS is enabled.
 
-Next, lets find the specific service we want to test, in this case, frontend.
+First find the specific service to test, in this case, `frontend`.
 
 ```bash
-kubectl get svc/frontend -n workshop
+kubectl get svc/$APP -n $NAMESPACE
 ```
 
-The output should look similar to below output. Note the service cluster IP in the output.
+The output should look similar to below sample output. Note the service cluster IP in the output.
 
 ```
 NAME       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
 frontend   ClusterIP   172.20.207.162   <none>        9000/TCP   27m
 ```
 
-Now run a pod with curl to try and reach the `frontend` service.
+Now run a pod with `curl` to try and reach the `frontend` service.
 
 ```bash
 kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
-Send a request to port 9000, which should get rejected as we don't have the proper certificate to authenticate to mTLS. Note that the IP address that it resolves to should be the same as what we saw before.
+Send a request to port `9000`, which should get rejected as we don't have the proper certificate to authenticate to mTLS.
 
 ```bash
 curl -v frontend.workshop.svc.cluster.local:9000
@@ -359,6 +357,8 @@ The output should be similar to the sample output below.
 * Closing connection 0
 curl: (56) Recv failure: Connection reset by peer
 ```
+
+Note that the resolved IP address should match the cluster IP of the `frontend` service inspected earlier.
 
 Exit out of the container shell session.
 
@@ -397,7 +397,7 @@ productcatalog-64848f7996-62r74   10.0.37.163
 
 ### Validate Ingress Gateway TLS settings
 
-Typically to protect publicly accessible `istio-ingress` service load balancer endpoints on the internet you would issue certificates from a well-known, trusted third party root CA or an intermediate CA and associate it with the load balancer HTTPS listener. Refer to [Issuing and managing certificates using AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html) for issuing or importing certificates. Refer to [AWS Load Balancer Controller service annotations TLS](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/service/annotations/#tls) section for details on how to associate ACM certificates with service load balancer listeners using service annotations.
+Typically, to protect publicly accessible `istio-ingress` service load balancer endpoints on the internet, you will issue certificates from a well-known, trusted third party root CA or an intermediate CA and associate it with the load balancer HTTPS listener. Refer to [Issuing and managing certificates using AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html) for issuing or importing certificates. Refer to [AWS Load Balancer Controller service annotations TLS](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/service/annotations/#tls) section for details on how to associate ACM certificates with service load balancer listeners using service annotations.
 
 You can also import certificates issued by AWS Private CA configured in standard mode into ACM. AWS Private CA configured in short-lived mode is not supported.
 However, for this module a self-signed certificate is used for the internet facing `istio-ingress` load balancer endpoint to avoid creating another Private CA resource. The self-signed certificate has been generated and imported into ACM. The generated PEM-encoded self-signed certificate (`lb_ingress_cert.pem`) is also exported in the module directory (`04-security`).
@@ -467,7 +467,7 @@ The output should be similar to below sample.
 ]
 ```
 
-Verify that the gateway is responding to HTTPS traffic using the exported PEM encoded CA certificate file from Private CA in the local directory.
+Verify that the gateway is responding to HTTPS traffic using the exported self-signed certificate file.
 
 ```bash
 ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')

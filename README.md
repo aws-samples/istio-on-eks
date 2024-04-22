@@ -1,4 +1,4 @@
-![image](https://github.com/aws-samples/istio-on-eks/assets/25695253/e705d4be-1ed8-4f84-804e-ae959873c07a)# Istio on EKS
+# Istio on EKS
 
 Run your containerized workloads and microservices as part of a service-mesh 
 with Istio on EKS! 🚀 

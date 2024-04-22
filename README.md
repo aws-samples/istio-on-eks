@@ -1,4 +1,4 @@
-# Istio on EKS
+![image](https://github.com/aws-samples/istio-on-eks/assets/25695253/e705d4be-1ed8-4f84-804e-ae959873c07a)# Istio on EKS
 
 Run your containerized workloads and microservices as part of a service-mesh 
 with Istio on EKS! 🚀 
@@ -16,9 +16,13 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 
 ## 🧱 Modules 
 
-### [1. Getting Started](modules/01-getting-started/README.md)
-### [2. Traffic Management](modules/02-traffic-management/README.md)
-### [3. Network Resiliency](modules/03-network-resiliency/README.md)
+### [Getting Started](modules/01-getting-started/README.md)
+### [Traffic Management](modules/02-traffic-management/README.md)
+### [Network Resiliency](modules/03-network-resiliency/README.md)
+
+## 💡 Patterns
+
+### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
 
 ## 🔐 Security
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

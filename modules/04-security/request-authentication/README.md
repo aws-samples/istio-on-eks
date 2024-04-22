@@ -102,7 +102,7 @@ The `Forward Original Token` field ensures the original JWT is propagated to the
 Export the ingress load balancer URL.
 
 ```bash
-export INGRESS_HOST=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 ```
 
 ### Generate access tokens
@@ -164,7 +164,7 @@ Send a request to the ingress endpoint setting the generated token in the author
 
 ```bash
 TOKEN=$(../scripts/helpers.sh -g -u alice)
-curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -181,7 +181,7 @@ Generate a bogus token and send a request to the application endpoint.
 
 ```bash
 TOKEN=bogus
-curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -195,7 +195,7 @@ HTTP Response: 401
 Send a request to the application endpoint with no bearer token.
 
 ```bash
-curl --cacert ../lb_ingress_cert.pem https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.
@@ -263,7 +263,7 @@ Note that both ports 80 and 443 are referred in the `AuthorizationPolicy`
 Send another request to the application endpoint with no bearer token.
 
 ```bash
-curl --cacert ../lb_ingress_cert.pem https://$INGRESS_HOST -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 The output should look similar to the sample output below.

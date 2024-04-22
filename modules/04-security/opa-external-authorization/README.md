@@ -737,7 +737,7 @@ productcatalog-987858dbd-qk69t    3/3     Running   0          62s
 Export the ingress URL.
 
 ```bash
-export INGRESS_HOST=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 ```
 
 ### Test access
@@ -750,7 +750,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u charlie)
-curl --cacert ../lb_ingress_cert.pem --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -786,7 +786,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u alice)
-curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -822,7 +822,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u bob)
-curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -858,7 +858,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u charlie)
-curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL/products -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -894,7 +894,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u alice)
-curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL/products -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:
@@ -930,7 +930,7 @@ to uniquely locate the decision log entry when searching the OPA decision log.
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u bob)
-curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" "https://${INGRESS_HOST}/products" -d "id=1" -d "name=Apples" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
+curl --cacert ../lb_ingress_cert.pem -X POST -H "x-req-id: $REQ_ID" -H "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL/products -d "id=1" -d "name=Apples" -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 
 Output should be similar to:

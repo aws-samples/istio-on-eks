@@ -126,9 +126,9 @@ function print_usage() {
   echo "    -c, --console"
   echo "    -g, --generate"
   echo "    -i, --inspect"
+  echo "    -w, --wait-lb"
   echo "    --authn"
   echo "    --authz"
-  echo "    -w, --wait-lb"
 }
 
 function handle_error() {

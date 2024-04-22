@@ -109,9 +109,9 @@ Below options cannot appear together for an invocation of this script.
   * `-c`, `--console`
   * `-g`, `--generate`
   * `-i`, `--inspect`
+  * `-w`, `--wait-lb`
   * `--authn`
   * `--authz`
-  * `-w`, `--wait-lb`
 
 Below are some examples of using the helper script to perform various actions related to configuring Istio request authentication and authorization.
 

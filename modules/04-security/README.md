@@ -23,7 +23,7 @@ This module will create its own EKS cluster with secure Istio workload configura
 
 ***:warning: WARN: Configuring this module in an existing cluster is not supported.***
 
-Provision an EKS cluster with Istio and the security module resources by executing the bellow commands.
+Provision an EKS cluster with Istio and the security module resources by executing the below commands.
 
 ```bash
 # This assumes that you are currently in "istio-on-eks" base directory
@@ -39,7 +39,7 @@ The terraform stack creates the following resources.
   * EKS cluster named `istio-on-eks-04-security`
   * Private CA configured to issue short lived certificates for mutual TLS
   * `cert-manager` and `aws-privateca-issuer` addon to issue short-lived certificates from AWS Private CA
-  * `cert-mangaer-istio-csr` to forward certificate requests from Istio control plane and workload proxies to `cert-manager`
+  * `cert-manager-istio-csr` to forward certificate requests from Istio control plane and workload proxies to `cert-manager`
   * Keycloak to manage application users and issue JSON Web Tokens (JWTs)
   * Istio with built-in CA disabled and configured with `cert-manager-istio-csr`
   * Gatekeeper for mutating workload deployments to enforce Open Policy Agent (OPA) based external authorization

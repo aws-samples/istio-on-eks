@@ -254,6 +254,8 @@ Pod: frontend-78f696695b-6txvg.workshop
 --------------------
 Service: frontend.workshop
    Port: http 9000/HTTP targets pod port 9000
+VirtualService: frontend.workshop
+   Match: /*
 --------------------
 Effective PeerAuthentication:
    Workload mTLS mode: PERMISSIVE
@@ -301,6 +303,8 @@ Pod: frontend-78f696695b-6txvg.workshop
 --------------------
 Service: frontend.workshop
    Port: http 9000/HTTP targets pod port 9000
+VirtualService: frontend.workshop
+   Match: /*
 --------------------
 Effective PeerAuthentication:
    Workload mTLS mode: STRICT

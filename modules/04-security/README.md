@@ -95,9 +95,9 @@ Following table lists the arguments of `helpers.sh` script.
 | `-c` | `--console` | `-` | No | `-` | Print Keycloak console URL. This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-g` | `--generate` | `-` | No | `-` | Generate access token for application user (requires `-u`\|`--user`). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-u` | `--user` | `string` | Required when `-g\|--generate` is set | `-` | Application username. |
-| `-i` | `--inspect` | `-` | No | `-` | Inspect access token (requires -t|--token). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
+| `-i` | `--inspect` | `-` | No | `-` | Inspect access token (requires `-t`\|`--token`). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-t` | `--token` | `string` | Required when `-i`\|`--inspect` is set | `-` | Access token. |
-| `-w` | `--wait-lb` | `-` | No | `-` | Wait for load balancer endpoint to become healthy (requires -l|--lb-arn-pattern). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
+| `-w` | `--wait-lb` | `-` | No | `-` | Wait for load balancer endpoint to become healthy (requires `-l`\|`--lb-arn-pattern`). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-l` | `--lb-arn-pattern` | `string` | Required when `-w`\|`--wait-lb` is set | `-` | Load balancer ARN pattern (required when `-w`\|`--wait-lb` is set). |
 | `-` | `--authn` | `-` | `-` | `-` | Apply `RequestAuthentication` manifest. This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-` | `--authz` | `-` | `-` | `-` | Apply `AuthorizationPolicy` manifest. This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |

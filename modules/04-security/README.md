@@ -98,7 +98,7 @@ Following table lists the arguments of `helpers.sh` script.
 | `-i` | `--inspect` | `-` | No | `-` | Inspect access token (requires `-t`\|`--token`). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-t` | `--token` | `string` | Required when `-i`\|`--inspect` is set | `-` | Access token. |
 | `-w` | `--wait-lb` | `-` | No | `-` | Wait for load balancer endpoint to become healthy (requires `-l`\|`--lb-arn-pattern`). This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
-| `-l` | `--lb-arn-pattern` | `string` | Required when `-w`\|`--wait-lb` is set | `-` | Load balancer ARN pattern (required when `-w`\|`--wait-lb` is set). |
+| `-l` | `--lb-arn-pattern` | `string` | Required when `-w`\|`--wait-lb` is set | `-` | Load balancer ARN pattern. |
 | `-` | `--authn` | `-` | `-` | `-` | Apply `RequestAuthentication` manifest. This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-` | `--authz` | `-` | `-` | `-` | Apply `AuthorizationPolicy` manifest. This is a mutually exclusive option. See [below](#mutually-exclusive-options) for more details. |
 | `-n` | `--keycloak-namespace` | `string` | No | `keycloak` | Namespace for keycloak. |

@@ -39,6 +39,8 @@ For this module the default Istio CA is disabled. The control plane and the prox
 
 **Note:** Make sure that the required resources have been created following the [setup instructions](../README.md#setup).
 
+**:warning: WARN: Some of the commands shown in this section refer to relative file paths that assume the current directory is `istio-on-eks/modules/04-security/terraform`. If your current directory does not match this path, then either change to the above directory to execute the commands or if executing from any other directory then adjust the file paths like `../scripts/helpers.sh` and `../lb_ingress_cert.pem` accordingly.**
+
 ## Validate
 
 Verify that all pods are running.
@@ -515,13 +517,19 @@ The output should be similar to below sample.
 ]
 ```
 
-Verify that the gateway is responding to HTTPS traffic using the exported self-signed certificate file.
+To verify that the gateway is accepting HTTPS traffic and forwarding to the right application, first export the ingress gateway load balancer endpoint.
 
 **:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
-# Assuming current directory is 04-security/terraform
+```
+
+Next, send a request to the ingress gateway load balancer endpoint using `curl` referring to the exported self-signed certificate using the `--cacert` flag for certificate verification.
+
+**:hourglass_flowing_sand: Command Line Execution**
+
+```bash
 curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
 ```
 

@@ -14,6 +14,7 @@ Ensure that you have the following tools installed locally:
   * [helm](https://helm.sh/docs/intro/install/)
   * [jq](https://jqlang.github.io/jq/download/)
   * [siege](https://github.com/JoeDog/siege)
+    - For Homebrew based installation refer to [siege](https://formulae.brew.sh/formula/siege).
   * [istioctl](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/#install-hahahugoshortcode860s2hbhb)
 
 ## Setup

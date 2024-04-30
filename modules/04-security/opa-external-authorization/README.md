@@ -50,6 +50,8 @@ Gatekeeper is already installed in the cluster.
 
 Verify that all the gatekeeper pods are running.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get all -n gatekeeper-system
 ```
@@ -185,6 +187,8 @@ Note the arguments for the `opa-istio` container above. A subset of the argument
 #### Apply the mutations
 Apply the `Assign` rules in `opa-ext-authz-sidecar-assign.yaml` manifest file.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl apply -f ../opa-external-authorization/opa-ext-authz-sidecar-assign.yaml
 ```
@@ -232,6 +236,8 @@ using the host name `opa-ext-authz-grpc.local`.
 
 Apply the manifest.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl apply -f ../opa-external-authorization/opa-ext-authz-serviceentry.yaml
 ```
@@ -246,6 +252,8 @@ serviceentry.networking.istio.io/opa-ext-authz-grpc-local created
 
 Update the `istio` ConfigMap in the root namespace (`istio-system`) to register the OPA external authorizer gRPC service as
 an extension provider.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 EXT_ENVOY_EXT_AUTHZ_GRPC=$(cat <<EOM
@@ -274,6 +282,8 @@ configmap/istio configured
 ```
 
 Verify that the `mesh` key in the ConfigMap has been updated.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get cm istio -n istio-system -o jsonpath='{.data.mesh}'
@@ -308,6 +318,8 @@ The next step is to prepare the application workloads for policy enforcement.
 ### Setup application namespace for auto-injection
 
 Label the `workshop` namespace so that Gatekeeper can automatically mutate the application pods.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl label namespace workshop opa-istio-injection=enabled
@@ -346,6 +358,8 @@ spec:
 
 Apply the AuthorizationPolicy.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl apply -f ../opa-external-authorization/productapp-authorizationpolicy.yaml
 ```
@@ -372,11 +386,15 @@ the bearer JWT tokens that contain embedded user roles in the `Authorization` HT
 
 The bearer tokens are minted via Keycloak using the helper script [`helpers.sh`](/modules/04-security/scripts/helpers.sh) like below.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 TOKEN=$(../scripts/helpers.sh -g -u alice)
 ```
 
 The minted tokens can then be inspected using the same helper script like below.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 ../scripts/helpers.sh -i -t $TOKEN
@@ -574,6 +592,8 @@ image injected as sidecar.
 
 #### Run tests using installed `opa` binary
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 opa test ../opa-external-authorization/policy_test.rego ../opa-external-authorization/policy.rego
 ```
@@ -586,6 +606,8 @@ PASS: xx/xx
 ```
 
 #### Run tests using container image
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 docker run \
@@ -628,6 +650,8 @@ generatorOptions:
 
 Apply the `Kustomization` to create the ConfigMap.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl apply -k ../opa-external-authorization/
 ```
@@ -639,6 +663,8 @@ configmap/opa-policy created
 ```
 
 Verify that the generated ConfigMap contains the entire content of the `policy.rego` policy file.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl describe configmap/opa-policy -n workshop
@@ -685,6 +711,8 @@ Events:  <none>
 
 Restart the application deployments to recreate the pods so that Gatekeeper can inject the OPA authorizer sidecar.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl rollout restart deployment/frontend -n workshop
 kubectl rollout restart deployment/productcatalog -n workshop
@@ -703,6 +731,8 @@ deployment.apps/catalogdetail2 restarted
 
 Wait till all the older pods have been terminated and the new pods show 3/3 containers are ready and status are `Running`. 
 It typically takes less than a minute.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get pods -n workshop
@@ -736,6 +766,8 @@ productcatalog-987858dbd-qk69t    3/3     Running   0          62s
 
 Export the ingress URL.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 ```
@@ -746,6 +778,8 @@ export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jso
 
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 REQ_ID=$RANDOM
@@ -761,6 +795,8 @@ HTTP Response: 403
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom 
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -783,6 +819,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u alice)
@@ -797,6 +835,8 @@ HTTP Response: 200
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom 
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -819,6 +859,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u bob)
@@ -833,6 +875,8 @@ HTTP Response: 200
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom 
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -855,6 +899,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u charlie)
@@ -869,6 +915,8 @@ HTTP Response: 403
 
 Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` custom
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -891,6 +939,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u alice)
@@ -905,6 +955,8 @@ HTTP Response: 403
 
 Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` custom
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -927,6 +979,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us 
 to uniquely locate the decision log entry when searching the OPA decision log.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 REQ_ID=$RANDOM
 TOKEN=$(../scripts/helpers.sh -g -u bob)
@@ -941,6 +995,8 @@ HTTP Response: 302
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom
 HTTP request header.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -961,6 +1017,8 @@ If no match is returned then rerun the `curl` request and search within a minute
 ## Clean up
 
 Clean up the resources set up in this section.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 # Delete the Assign rules

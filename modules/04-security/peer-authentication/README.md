@@ -43,6 +43,8 @@ For this module the default Istio CA is disabled. The control plane and the prox
 
 Verify that all pods are running.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get pods -n cert-manager
 kubectl get pods -n aws-privateca-issuer
@@ -74,6 +76,8 @@ istio-ingress-845d676c6b-rsh8c   1/1     Running   0          83s
 
 Verify that AWS PrivateCA Issuer named `root-ca` is `Ready`.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get awspcaclusterissuer/root-ca \
   -o custom-columns='NAME:.metadata.name,CONDITION_MSG:.status.conditions[*].message,CONDITION_REASON:.status.conditions[*].reason,CONDITION_STATUS:.status.conditions[*].status,CONDITION_TYPE:.status.conditions[*].type'
@@ -87,6 +91,8 @@ root-ca   Issuer verified   Verified           True               Ready
 ```
 
 Verify that the intermediate CA certificate issuer `istio-ca`, CA certificate `istio-ca` and `istiod` certificate are all created and all report `READY=True`:
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get issuers,certificates -n istio-system
@@ -104,6 +110,8 @@ certificate.cert-manager.io/istiod     True    istiod-tls   4m19s
 ```
 
 Verify that a secret containing the intermediate CA certificate named `istio-ca` has been created and chains up to the root CA certificate from AWS Private CA.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get secret/istio-ca -n istio-system -o jsonpath='{.data.tls\.crt}' \
@@ -138,6 +146,8 @@ In the output, note that the certificate is a CA certificate and the Organizatio
 
 Setup environment variables to inspect the workload TLS settings.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 export NAMESPACE=workshop
 export APP=frontend
@@ -145,17 +155,23 @@ export APP=frontend
 
 In a separate terminal window follow the `cert-manager` logs for certificate requests being approved and issued by `cert-manager`. The below command follows the log since the previous two minutes.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl logs -n cert-manager $(kubectl get pods -n cert-manager -o jsonpath='{.items..metadata.name}' --selector app=cert-manager) --since 2m -f
 ```
 
 In another separate terminal window start a watch on the certificate requests being generated in the `istio-system` namespace by running the below command.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get certificaterequests.cert-manager.io -n istio-system -w
 ```
 
 Now in the original terminal window where you have created the environment variables patch the frontend deployment to enable proxy debug logs.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl patch deployment/$APP -n $NAMESPACE --type=merge --patch='{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/logLevel":"debug"}}}}}'
@@ -184,11 +200,15 @@ I0422 11:32:12.062274       1 conditions.go:263] Setting lastTransitionTime for 
 
 Verify that all workload pods are running with both the application and sidecar containers reporting ready to serve requests. Wait until all terminating pods are cleaned up.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get pods -n $NAMESPACE
 ```
 
 To validate that the `istio-proxy` sidecar container has requested the certificate from the correct service, check the container logs:
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs $(kubectl get pod -n $NAMESPACE -o jsonpath="{.items...metadata.name}" --selector app=$APP) -c istio-proxy -n $NAMESPACE | grep 'cert-manager-istio-csr.cert-manager.svc:443'
@@ -202,6 +222,8 @@ There should be matching log lines similar to the sample output below.
 ```
 
 Finally, inspect the certificate being used in memory by Envoy. Verify that the certificate chain of the in-memory certificate used by Envoy proxy shows the Issuer Organization (`O`) as `cert-manager` and common name (`CN`) as `istio-ca`. The Issuer should match the intermediate CA verified earlier.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 istioctl proxy-config secret $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP) -n $NAMESPACE -o json \
@@ -241,6 +263,8 @@ By default, Istio will use mTLS for all workloads with proxies configured, howev
 
 Verify if mTLS is in Permissive mode (uses mTLS when available but allows plain text) or Strict mode (mTLS required). Note the value for "Workload mTLS mode" should show `PERMISSIVE`.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 istioctl x describe pod $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP).workshop
 ```
@@ -264,6 +288,8 @@ Skipping Gateway information (no ingress gateway pods)
 
 In a separate terminal window open the Kiali dashboard.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 istioctl dashboard kiali
 ```
@@ -274,6 +300,8 @@ Verify mTLS status in Kiali by checking the tooltip for the lock icon in the mas
 
 
 If we want to force mTLS for all traffic, then we must enable STRICT mode.  Run the following command to force mTLS everywhere Istio is running.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl apply -f - <<EOF
@@ -289,6 +317,8 @@ EOF
 ```
 
 Verify that the workload mTLS mode shows `STRICT`.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 istioctl x describe pod $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP).workshop
@@ -324,6 +354,8 @@ Next, run `curl` command from another pod to test and verify that mTLS is enable
 
 First find the specific service to test, in this case, `frontend`.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl get svc/$APP -n $NAMESPACE
 ```
@@ -337,11 +369,15 @@ frontend   ClusterIP   172.20.207.162   <none>        9000/TCP   27m
 
 Now run a pod with `curl` to try and reach the `frontend` service.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
 Send a request to port `9000`, which should get rejected as we don't have the proper certificate to authenticate to mTLS.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 curl -v frontend.workshop.svc.cluster.local:9000
@@ -368,6 +404,8 @@ Exit out of the container shell session.
 
 Next, search the proxy debug log to verify that tls mode (`socket tlsMode-istio`) has been selected for proxy connections to the workload pods.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 kubectl logs $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP) -n workshop -c istio-proxy \
   | grep 'tlsMode.*:[359]000'
@@ -384,6 +422,8 @@ There should be matches similar to below snippet.
 ```
 
 Verify the application pod IPs match the log lines.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get pods -n $NAMESPACE -o custom-columns='NAME:metadata.name,PodIP:status.podIP'
@@ -407,6 +447,8 @@ You can also import certificates issued by AWS Private CA configured in standard
 However, for this module a self-signed certificate is used for the internet facing `istio-ingress` load balancer endpoint to avoid creating another Private CA resource. The self-signed certificate has been generated and imported into ACM. The generated PEM-encoded self-signed certificate (`lb_ingress_cert.pem`) is also exported in the module directory (`04-security`).
 
 As part of the setup process the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service. Describe the service to verify the annotations.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get svc/istio-ingress -n istio-ingress -o jsonpath='{.metadata.annotations}' | jq -r
@@ -439,6 +481,8 @@ Note the below annotation values
 
 The application gateway definition is patched to add a server route for HTTPS traffic on port 443.
 Describe the `gateway` resource and verify that there are routes for port 80 and port 443 respectively.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl get gateway/productapp-gateway -n workshop -o jsonpath='{.spec.servers}' | jq -r
@@ -473,6 +517,8 @@ The output should be similar to below sample.
 
 Verify that the gateway is responding to HTTPS traffic using the exported self-signed certificate file.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
 # Assuming current directory is 04-security/terraform
@@ -486,6 +532,8 @@ HTTP Response: 200
 ```
 
 Run a load test against the ingress gateway.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 siege https://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M

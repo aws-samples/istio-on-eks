@@ -25,6 +25,8 @@ This module will create its own EKS cluster with secure Istio workload configura
 
 Provision an EKS cluster with Istio and the security module resources by executing the below commands.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 # This assumes that you are currently in "istio-on-eks" base directory
 cd modules/04-security/terraform
@@ -130,6 +132,8 @@ Below are some examples of using the helper script to perform various actions re
 **Note:** Remember to set the correct AWS region in the terminal window before invoking the script.
 For example, in the bash terminal window execute the following. Make sure the region is the one where the terraform stack has created the keycloak resources.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 export AWS_REGION=us-west-2
 ```
@@ -143,6 +147,7 @@ export AWS_REGION=us-west-2
 ## Clean up
 Clean up all the resources using `terraform destroy` command.
 
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 terraform destroy -auto-approve

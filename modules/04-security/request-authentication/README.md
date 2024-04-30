@@ -50,6 +50,8 @@ separator, to be present in the request and deny all other requests.
 
 The [request authentication template](./ingress-requestauthentication-template.yaml) contains `ISSUER` and `JWKS_URI` placeholders that are replaced by the helper script. Apply request authentication policy to the ingress gateway.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 ../scripts/helpers.sh --authn
 ```
@@ -61,6 +63,8 @@ requestauthentication.security.istio.io/istio-ingress created
 ```
 
 Inspect the applied `RequestAuthentication` object.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl describe RequestAuthentication/istio-ingress -n istio-ingress 
@@ -101,6 +105,8 @@ The `Forward Original Token` field ensures the original JWT is propagated to the
 
 Export the ingress load balancer URL.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 ```
@@ -109,11 +115,15 @@ export ISTIO_INGRESS_URL=$(kubectl get svc istio-ingress -n istio-ingress -o jso
 
 Generate a token for user `alice`.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 TOKEN=$(../scripts/helpers.sh -g -u alice)
 ```
 
 Inspect the generated access token using the helper script.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 ../scripts/helpers.sh -i -t $TOKEN
@@ -162,6 +172,8 @@ Note the values of the issuer (`iss`) and audience (`aud`) claims. These match t
 
 Send a request to the ingress endpoint setting the generated token in the authorization header.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 TOKEN=$(../scripts/helpers.sh -g -u alice)
 curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
@@ -179,6 +191,8 @@ HTTP Response: 200
 
 Generate a bogus token and send a request to the application endpoint.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 TOKEN=bogus
 curl --cacert ../lb_ingress_cert.pem --header "Authorization: Bearer $TOKEN" https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
@@ -193,6 +207,8 @@ HTTP Response: 401
 ### Scenario: Request with no token should be allowed
 
 Send a request to the application endpoint with no bearer token.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
@@ -210,6 +226,8 @@ A [deny AuthorizationPolicy](./ingress-authorizationpolicy.yaml) is used to reje
 
 Apply the authorization policy.
 
+**:hourglass_flowing_sand: Command Line Execution**
+
 ```bash
 ../scripts/helpers.sh --authz
 ```
@@ -221,6 +239,8 @@ authorizationpolicy.security.istio.io/istio-ingress created
 ```
 
 View the authorization policy applied above.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl describe AuthorizationPolicy/istio-ingress -n istio-ingress
@@ -261,6 +281,8 @@ Events:       <none>
 Note that both ports 80 and 443 are referred in the `AuthorizationPolicy`
 
 Send another request to the application endpoint with no bearer token.
+
+**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"

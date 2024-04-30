@@ -44,7 +44,7 @@ separator, to be present in the request and deny all other requests.
 
 **Note:** Make sure that the required resources have been created following the [setup instructions](../README.md#setup).
 
-**:warning: WARN:** Some of the commands shown in this section refer to relative file paths that assume the current directory is `istio-on-eks/modules/04-security/terraform`. If your current directory does not match this path, then either change to the above directory to execute the commands or if executing from any other directory then adjust the file paths like `../scripts/helpers.sh` and `../lb_ingress_cert.pem` accordingly.
+**:warning: WARN:** Some of the commands shown in this section refer to relative file paths that assume the current directory is `istio-on-eks/modules/04-security/terraform`. If your current directory does not match this path, then either change to the above directory to execute the commands or if executing from any other directory, then adjust the file paths like `../scripts/helpers.sh` and `../lb_ingress_cert.pem` accordingly.
 
 ## Deploy
 

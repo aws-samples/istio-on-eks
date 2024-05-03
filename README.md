@@ -16,10 +16,14 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 
 ## 🧱 Modules 
 
-### [1. Getting Started](modules/01-getting-started/README.md)
-### [2. Traffic Management](modules/02-traffic-management/README.md)
-### [3. Network Resiliency](modules/03-network-resiliency/README.md)
-### [4. Security](modules/04-security/README.md)
+### [Getting Started](modules/01-getting-started/README.md)
+### [Traffic Management](modules/02-traffic-management/README.md)
+### [Network Resiliency](modules/03-network-resiliency/README.md)
+### [Security](modules/04-security/README.md)
+
+## 💡 Patterns
+
+### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
 
 ## 🔐 Security
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
@@ -28,6 +32,6 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 This library is licensed under the Apache 2.0 License.
 
 ## 🙌 Community
-We welcome all individuals who are enthusiastic about data on Kubernetes to become a part of this open source community. Your contributions and participation are invaluable to the success of this project.
+We welcome all individuals who are enthusiastic about Service Mesh and Istio patterns to become a part of this open source community. Your contributions and participation are invaluable to the success of this project.
 
 Built with ❤️ at AWS.

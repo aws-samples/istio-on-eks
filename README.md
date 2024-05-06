@@ -19,6 +19,7 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 ### [Getting Started](modules/01-getting-started/README.md)
 ### [Traffic Management](modules/02-traffic-management/README.md)
 ### [Network Resiliency](modules/03-network-resiliency/README.md)
+### [Security](modules/04-security/README.md)
 
 ## 💡 Patterns
 

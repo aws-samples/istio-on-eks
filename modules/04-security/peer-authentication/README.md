@@ -35,15 +35,15 @@ For this module the default Istio CA is disabled. The control plane and the prox
 
 *Figure: [How Certificate Signing Works in Istio with ACM Private CA](https://aws.github.io/aws-eks-best-practices/security/docs/network/#how-certificate-signing-works-in-istio-with-acm-private-ca)*
 
+## Validate Environment Setup
+
 ## Prerequisites
 
 **Note:** Make sure that the required resources have been created following the [setup instructions](../README.md#setup).
 
 **:warning: WARN:** Some of the commands shown in this section refer to relative file paths that assume the current directory is `istio-on-eks/modules/04-security/terraform`. If your current directory does not match this path, then either change to the above directory to execute the commands or if executing from any other directory, then adjust the file paths like `../scripts/helpers.sh` and `../lb_ingress_cert.pem` accordingly.
 
-## Validate
-
-Verify that all pods are running.
+**Verify that all pods are running:**
 
 **:hourglass_flowing_sand: Command Line Execution**
 
@@ -350,7 +350,7 @@ You can also check this by hovering your mouse over the Lock icon in the Kiali b
 ![Kiali mast head lock tooltip for mesh wide strict mTLS](/images/04-kiali-mast-head-lock-default-strict-mode.png)
 
 
-## Validation
+## Verify that mTLS is now required
 
 Next, run `curl` command from another pod to test and verify that mTLS is enabled.
 
@@ -369,7 +369,7 @@ NAME       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
 frontend   ClusterIP   172.20.207.162   <none>        9000/TCP   27m
 ```
 
-Now run a pod with `curl` to try and reach the `frontend` service.
+Now run a pod with `curl` to try and reach the `frontend` service from a new and untrusted container.
 
 **:hourglass_flowing_sand: Command Line Execution**
 
@@ -403,6 +403,16 @@ curl: (56) Recv failure: Connection reset by peer
 Note that the resolved IP address should match the cluster IP of the `frontend` service inspected earlier.
 
 Exit out of the container shell session.
+
+Now let's run a curl command from the frontend pod's istio-proxy directly to itself on port 9000. Because the certificate is in place and trusted, mTLS connectivity is possible, and we should see a success message:
+
+**:hourglass_flowing_sand: Command Line Execution**
+
+```$ kubectl exec $(kubectl get pod -l app=$APP -n $NAMESPACE -o jsonpath='{.items..metadata.name}') -n $NAMESPACE -c istio-proxy -- curl localhost:9000/ -s -o /dev/null -w "HTTP Response: %{http_code}\n"```
+
+```
+HTTP Response: 200
+```
 
 Next, search the proxy debug log to verify that tls mode (`socket tlsMode-istio`) has been selected for proxy connections to the workload pods.
 

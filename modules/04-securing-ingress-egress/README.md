@@ -74,7 +74,7 @@ cd ..
 kubectl delete secret istio-tls-credential  -n istio-ingress
 ```
 
-### Securing ingress traffic with TLS
+### Securing ingress traffic with mTLS
 
 configure mtls 
 
@@ -113,7 +113,7 @@ cd ..
 ```
 ### Controlling ingress traffic with mTLS authorization
 
-### Using aplication load balancer to offload mTLS validation to the load balancer
+### Using application load balancer to offload mTLS validation to the load balancer
 
 configure mtls  with alb in proxy mode
 

@@ -143,7 +143,8 @@ export AWS_REGION=us-west-2
 
 ### [1. Peer Authentication](/modules/04-security/peer-authentication/README.md)
 ### [2. Request Authentication](/modules/04-security/request-authentication/README.md)
-### [3. OPA based External Authorization](/modules/04-security/opa-external-authorization/README.md)
+### [3. Ingress Security](/modules/04-security/ingress-security/README.md)
+### [4. OPA based External Authorization](/modules/04-security/opa-external-authorization/README.md)
 
 ## Clean up
 Clean up all the resources using `terraform destroy` command.

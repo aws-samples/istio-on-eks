@@ -167,6 +167,13 @@ cd ..
 
 ### Securing egress traffic 
 
-a. Passthrough mode
+#### Securing calls to service exposed through HTTPS endpoint. 
+
+In this pattern the call from the Pod to Envoy proxy would be through HTTP and Envoy proxy would initiate the HTTPS call to the service on behalf
+of the Pod. The call between the Pod and Egress is secured with mTLS. In this approach, policies can be applied on the Egress gateway to control
+
+```sh
+cd cd 04-securing-ingress-egress/secure-egress-https/tls-origination/
+```
 
 b. mTLS and TLS orgination at egress gateway

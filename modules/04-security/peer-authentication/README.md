@@ -1,8 +1,10 @@
 # Security - Peer Authentication
 
-This sub-module focuses on enforcing mutual TLS using AWS Private CA for **Peer Authentication** on Amazon EKS.
+This sub-module focuses on enforcing mutual TLS with Istio using AWS Private CA for **Peer Authentication** on Amazon EKS. Before we go into Istio configuration and validation, we will start with certificate management.
 
-This is achieved through [`cert-manager`](https://cert-manager.io/) integrations.
+## Peer Authentication Certificate Management
+
+Istio certificate management is achieved through [`cert-manager`](https://cert-manager.io/) integrations.
 
 The below projects are used to integrate Istio with AWS Private CA:
 
@@ -10,6 +12,7 @@ The below projects are used to integrate Istio with AWS Private CA:
   * [`istio-csr`](https://github.com/cert-manager/istio-csr) - an agent that allows for Istio workload and control plane components to be secured using cert-manager
 
 It is recommended to install all the dependencies for certificate management like `cert-manager`, `aws-privateca-issuer` and `istio-csr` before installing Istio control plane to avoid issues with CA migration. Refer to [Installing istio-csr After Istio](https://cert-manager.io/docs/usage/istio-csr/#installing-istio-csr-after-istio) for more details.
+
 
 ### AWS Private CA
 
@@ -254,10 +257,13 @@ Certificate:
     Signature Algorithm: sha256WithRSAEncryption
     ...
 ```
+<br/><br/>
 
-## Mutual TLS Enforcement Modes
+## Mutual TLS Enforcement Modes in Istio
 
-This section will demonstrate the steps needed to validate and enforce Mutual Transport Layer Security (mTLS) for peer authentication between workloads.
+Now that certificate management is configured properly, we can move on to the Istio configuration.  This section will demonstrate the steps needed to validate and enforce Mutual Transport Layer Security (mTLS) for peer authentication between workloads.
+
+### Change default Istio Permissive configuration to Strict
 
 By default, Istio will use mTLS for all workloads with proxies configured, however it will also allow plain text.  When the `X-Forwarded-Client-Cert` header is present in the request, Istio will use mTLS, and when it is missing, it implies that the requests are in plain text.
 
@@ -350,7 +356,7 @@ You can also check this by hovering your mouse over the Lock icon in the Kiali b
 ![Kiali mast head lock tooltip for mesh wide strict mTLS](/images/04-kiali-mast-head-lock-default-strict-mode.png)
 
 
-## Verify that mTLS is now required
+### Verify that mTLS is now required
 
 Next, run `curl` command from another pod to test and verify that mTLS is enabled.
 

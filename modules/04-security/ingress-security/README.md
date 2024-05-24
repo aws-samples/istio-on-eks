@@ -1,10 +1,10 @@
-### Ingress Gateway TLS settings
+## Ingress Gateway Certificate Management
 
 Typically, to protect publicly accessible `istio-ingress` service load balancer endpoints on the internet, you will issue certificates from a well-known, trusted third party root CA or an intermediate CA and associate it with the load balancer HTTPS listener. Refer to [Issuing and managing certificates using AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html) for issuing or importing certificates. Refer to [AWS Load Balancer Controller service annotations TLS](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/service/annotations/#tls) section for details on how to associate ACM certificates with service load balancer listeners using service annotations.
 
 You can also import certificates issued by AWS Private CA configured in standard mode into ACM. AWS Private CA configured in short-lived mode is not supported. However, for this module a self-signed certificate is used for the internet facing `istio-ingress` load balancer endpoint to avoid creating another Private CA resource. The self-signed certificate has been generated and imported into ACM. The generated PEM-encoded self-signed certificate (`lb_ingress_cert.pem`) is also exported in the module directory (`04-security`).
 
-As part of the setup process the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service. Describe the service to verify the annotations.
+As part of the setup process, the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service. Describe the service to verify the annotations.
 <br/><br/>
 
 ![Istio Ingress Gateway drawio](https://github.com/aws-samples/istio-on-eks/assets/71530829/08a1fa31-a61e-475c-b1be-ebc7deaa95d9)
@@ -44,6 +44,7 @@ Note the below annotation values
 | `service.beta.kubernetes.io/aws-load-balancer-ssl-ports` | `https` |
 
 The application gateway definition is patched to add a server route for HTTPS traffic on port 443.
+
 Describe the `gateway` resource and verify that there are routes for port 80 and port 443 respectively.
 
 **:hourglass_flowing_sand: Command Line Execution**
@@ -101,7 +102,7 @@ The output should look similar to the sample output below.
 HTTP Response: 200
 ```
 
-Run a load test against the ingress gateway.
+Run a load test against the ingress gateway, so that its easy to visual the traffic in Kiali.
 
 **:hourglass_flowing_sand: Command Line Execution**
 

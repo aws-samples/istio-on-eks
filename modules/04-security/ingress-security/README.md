@@ -1,4 +1,4 @@
-## Ingress Gateway Certificate Management
+# Ingress Gateway Certificate Management
 
 Typically, to protect publicly accessible `istio-ingress` service load balancer endpoints on the internet, you will issue certificates from a well-known, trusted third party root CA or an intermediate CA and associate it with the load balancer HTTPS listener. Refer to [Issuing and managing certificates using AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/gs.html) for issuing or importing certificates. Refer to [AWS Load Balancer Controller service annotations TLS](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/service/annotations/#tls) section for details on how to associate ACM certificates with service load balancer listeners using service annotations.
 
@@ -10,6 +10,16 @@ As part of the setup process, the imported self-signed ACM certificate is associ
 
 *Figure: Istio Ingress Gateway using ACM
 <br/><br/>
+
+
+## Prerequisites
+
+**Note:** Make sure that the required resources have been created following the [setup instructions](../README.md#setup).
+
+**:warning: WARN:** Some of the commands shown in this section refer to relative file paths that assume the current directory is `istio-on-eks/modules/04-security/terraform`. If your current directory does not match this path, then either change to the above directory to execute the commands or if executing from any other directory, then adjust the file paths like `../scripts/helpers.sh` and `../lb_ingress_cert.pem` accordingly.
+
+
+## Verify Setup
 
 **Describe the service to verify the annotations**
 

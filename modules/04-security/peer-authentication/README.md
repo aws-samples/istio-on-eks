@@ -48,8 +48,6 @@ For this module the default Istio CA is disabled. The control plane and the prox
 
 **Verify that all pods are running:**
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 kubectl get pods -n cert-manager
 kubectl get pods -n aws-privateca-issuer
@@ -79,9 +77,7 @@ NAME                             READY   STATUS    RESTARTS   AGE
 istio-ingress-845d676c6b-rsh8c   1/1     Running   0          83s
 ```
 
-Verify that AWS PrivateCA Issuer named `root-ca` is `Ready`.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Verify that AWS PrivateCA Issuer named `root-ca` is `Ready`**
 
 ```bash
 kubectl get awspcaclusterissuer/root-ca \
@@ -95,9 +91,7 @@ NAME      CONDITION_MSG     CONDITION_REASON   CONDITION_STATUS   CONDITION_TYPE
 root-ca   Issuer verified   Verified           True               Ready
 ```
 
-Verify that the intermediate CA certificate issuer `istio-ca`, CA certificate `istio-ca` and `istiod` certificate are all created and all report `READY=True`:
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Verify that the intermediate CA certificate issuer `istio-ca`, CA certificate `istio-ca` and `istiod` certificate are all created and all report `READY=True`:**
 
 ```bash
 kubectl get issuers,certificates -n istio-system
@@ -114,9 +108,7 @@ certificate.cert-manager.io/istio-ca   True    istio-ca     4m36s
 certificate.cert-manager.io/istiod     True    istiod-tls   4m19s
 ```
 
-Verify that a secret containing the intermediate CA certificate named `istio-ca` has been created and chains up to the root CA certificate from AWS Private CA.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Verify that a secret containing the intermediate CA certificate named `istio-ca` has been created and chains up to the root CA certificate from AWS Private CA.**
 
 ```bash
 kubectl get secret/istio-ca -n istio-system -o jsonpath='{.data.tls\.crt}' \
@@ -149,34 +141,32 @@ Certificate:
 
 In the output, note that the certificate is a CA certificate and the Organization (`O`) shows as `cert-manager` and common name (`CN`) shows as `istio-ca`. This will be validated later when inspecting the workload certificates. The issuer `CN` should match the AWS PrivateCA certificate CN value.
 
-Setup environment variables to inspect the workload TLS settings.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Setup environment variables to inspect the workload TLS settings**
 
 ```bash
 export NAMESPACE=workshop
 export APP=frontend
 ```
 
-In a separate terminal window follow the `cert-manager` logs for certificate requests being approved and issued by `cert-manager`. The below command follows the log since the previous two minutes.
+**Get logs for cert-manager**
 
-**:hourglass_flowing_sand: Command Line Execution**
+In a separate terminal window follow the `cert-manager` logs for certificate requests being approved and issued by `cert-manager`. The below command follows the log since the previous two minutes.
 
 ```bash
 kubectl logs -n cert-manager $(kubectl get pods -n cert-manager -o jsonpath='{.items..metadata.name}' --selector app=cert-manager) --since 2m -f
 ```
 
-In another separate terminal window start a watch on the certificate requests being generated in the `istio-system` namespace by running the below command.
+**Get certificate requests**
 
-**:hourglass_flowing_sand: Command Line Execution**
+In another separate terminal window start a watch on the certificate requests being generated in the `istio-system` namespace by running the below command.
 
 ```bash
 kubectl get certificaterequests.cert-manager.io -n istio-system -w
 ```
 
-Now in the original terminal window where you have created the environment variables patch the frontend deployment to enable proxy debug logs.
+**Enable proxy debug logs** 
 
-**:hourglass_flowing_sand: Command Line Execution**
+Now in the original terminal window where you have created the environment variables patch the frontend deployment to enable proxy debug logs.
 
 ```bash
 kubectl patch deployment/$APP -n $NAMESPACE --type=merge --patch='{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/logLevel":"debug"}}}}}'
@@ -203,17 +193,17 @@ I0422 11:32:12.017941       1 conditions.go:263] Setting lastTransitionTime for 
 I0422 11:32:12.062274       1 conditions.go:263] Setting lastTransitionTime for CertificateRequest "istio-csr-pld72" condition "Ready" to 2024-04-22 11:32:12.062263818 +0000 UTC m=+4483.233332478
 ```
 
-Verify that all workload pods are running with both the application and sidecar containers reporting ready to serve requests. Wait until all terminating pods are cleaned up.
+**Verify that all workload pods are running** 
 
-**:hourglass_flowing_sand: Command Line Execution**
+All worloads should be running with both the application and sidecar containers reporting ready to serve requests. Wait until all terminating pods are cleaned up.
 
 ```bash
 kubectl get pods -n $NAMESPACE
 ```
 
-To validate that the `istio-proxy` sidecar container has requested the certificate from the correct service, check the container logs:
+**Check container logs**
 
-**:hourglass_flowing_sand: Command Line Execution**
+To validate that the `istio-proxy` sidecar container has requested the certificate from the correct service, check the container logs:
 
 ```bash
 kubectl logs $(kubectl get pod -n $NAMESPACE -o jsonpath="{.items...metadata.name}" --selector app=$APP) -c istio-proxy -n $NAMESPACE | grep 'cert-manager-istio-csr.cert-manager.svc:443'
@@ -226,9 +216,8 @@ There should be matching log lines similar to the sample output below.
 2024-04-17T17:10:47.792274Z     info    Using CA cert-manager-istio-csr.cert-manager.svc:443 cert with certs: var/run/secrets/istio/root-cert.pem
 ```
 
+**Inspect certificate**
 Finally, inspect the certificate being used in memory by Envoy. Verify that the certificate chain of the in-memory certificate used by Envoy proxy shows the Issuer Organization (`O`) as `cert-manager` and common name (`CN`) as `istio-ca`. The Issuer should match the intermediate CA verified earlier.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 istioctl proxy-config secret $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP) -n $NAMESPACE -o json \
@@ -257,7 +246,6 @@ Certificate:
     Signature Algorithm: sha256WithRSAEncryption
     ...
 ```
-<br/><br/>
 
 ## Mutual TLS Enforcement Modes in Istio
 
@@ -269,9 +257,9 @@ By default, Istio will use mTLS for all workloads with proxies configured, howev
 
 ![Sidecar mTLS connections](/images/04-peer-authentication-mtls-sidecar-connections.png)
 
-Verify if mTLS is in Permissive mode (uses mTLS when available but allows plain text) or Strict mode (mTLS required). Note the value for "Workload mTLS mode" should show `PERMISSIVE`.
+**Verify if mTLS is in Permissive mode**
 
-**:hourglass_flowing_sand: Command Line Execution**
+(uses mTLS when available but allows plain text) or Strict mode (mTLS required). Note the value for "Workload mTLS mode" should show `PERMISSIVE`.
 
 ```bash
 istioctl x describe pod $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP).workshop
@@ -296,20 +284,16 @@ Skipping Gateway information (no ingress gateway pods)
 
 In a separate terminal window open the Kiali dashboard.
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 istioctl dashboard kiali
 ```
 
-Verify mTLS status in Kiali by checking the tooltip for the lock icon in the masthead.
+**Verify mTLS status in Kiali by checking the tooltip for the lock icon in the masthead.**
 
 ![Kiali mast head lock tooltip for mesh wide auto mTLS](/images/04-kiali-mast-head-lock-auto-mtls.png)
 
 
 If we want to force mTLS for all traffic, then we must enable STRICT mode.  Run the following command to force mTLS everywhere Istio is running.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl apply -f - <<EOF
@@ -324,9 +308,7 @@ spec:
 EOF
 ```
 
-Verify that the workload mTLS mode shows `STRICT`.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Verify that the workload mTLS mode shows `STRICT`**
 
 ```bash
 istioctl x describe pod $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP).workshop
@@ -362,8 +344,6 @@ Next, run `curl` command from another pod to test and verify that mTLS is enable
 
 First find the specific service to test, in this case, `frontend`.
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 kubectl get svc/$APP -n $NAMESPACE
 ```
@@ -375,17 +355,14 @@ NAME       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
 frontend   ClusterIP   172.20.207.162   <none>        9000/TCP   27m
 ```
 
+**Failure case of mTLS connectivity**
 Now run a pod with `curl` to try and reach the `frontend` service from a new and untrusted container.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
 Send a request to port `9000`, which should get rejected as we don't have the proper certificate to authenticate to mTLS.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 curl -v frontend.workshop.svc.cluster.local:9000
@@ -410,9 +387,8 @@ Note that the resolved IP address should match the cluster IP of the `frontend` 
 
 Exit out of the container shell session.
 
+**Success case of mTLS connectivity**
 Now let's run a curl command from the frontend pod's istio-proxy directly to itself on port 9000. Because the certificate is in place and trusted, mTLS connectivity is possible, and we should see a success message:
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```$ kubectl exec $(kubectl get pod -l app=$APP -n $NAMESPACE -o jsonpath='{.items..metadata.name}') -n $NAMESPACE -c istio-proxy -- curl localhost:9000/ -s -o /dev/null -w "HTTP Response: %{http_code}\n"```
 
@@ -421,8 +397,6 @@ HTTP Response: 200
 ```
 
 Next, search the proxy debug log to verify that tls mode (`socket tlsMode-istio`) has been selected for proxy connections to the workload pods.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs $(kubectl get pods -n $NAMESPACE -o jsonpath='{.items..metadata.name}' --selector app=$APP) -n workshop -c istio-proxy \
@@ -439,9 +413,7 @@ There should be matches similar to below snippet.
 2024-04-17T17:38:00.215464Z     debug   envoy upstream external/envoy/source/common/upstream/upstream_impl.cc:426       transport socket match, socket tlsMode-istio selected for host with address 10.0.43.244:9000    thread=15
 ```
 
-Verify the application pod IPs match the log lines.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Verify the application pod IPs match the log lines.**
 
 ```bash
 kubectl get pods -n $NAMESPACE -o custom-columns='NAME:metadata.name,PodIP:status.podIP'

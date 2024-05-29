@@ -4,10 +4,7 @@ This module will cover security related capabilities of Istio service-mesh on Am
 
 ## Prerequisites:
 
-To be able to work on this module you should meet the following prerequisites.
-
-### Tools
-Ensure that you have the following tools installed locally:
+To be able to work on this module you should meet the following prerequisites.Ensure that you have the following tools installed locally:
   * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
   * [terraform](https://developer.hashicorp.com/terraform/install)
   * [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
@@ -18,15 +15,11 @@ Ensure that you have the following tools installed locally:
   * [istioctl](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/#install-hahahugoshortcode860s2hbhb)
 
 ## Setup
-Before proceeding with this section ensure that you have configured your system as per the [Prerequisites](#prerequisites).
-
 This module will create its own EKS cluster with secure Istio workload configurations.
 
-***:warning: WARN: Configuring this module in an existing cluster is not supported.***
+**Note**: Configuring this module in an existing cluster is not supported.
 
 Provision an EKS cluster with Istio and the security module resources by executing the below commands.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 # This assumes that you are currently in "istio-on-eks" base directory
@@ -34,8 +27,7 @@ cd modules/04-security/terraform
 terraform init
 terraform apply -auto-approve
 ```
-
-***Note: The terraform stack can take between 25 to 30 minutes to provision all the resources required for this module. Take a short break and grab a cup of your favorite hot beverage. :coffee:***
+**Note**: The terraform stack can take between 25 to 30 minutes to provision all the resources required for this module. Take a short break and grab a cup of your favorite hot beverage. :coffee:
 
 The terraform stack creates the following resources.
   * VPC resources to host the EKS cluster
@@ -49,15 +41,14 @@ The terraform stack creates the following resources.
   * Workload microservices with an HTTPS route
 
 ### Keycloak resources
-
-This setup module installs Keycloak and creates the following Keycloak resources for request authentication and external authorization modules.
+Above setup installs Keycloak and creates the following Keycloak resources for request authentication and external authorization modules.
 
 | Resource Type | Name | Purpose |
 |---------------|------|---------|
 | Realm | `workshop` | A container for users, roles and OIDC application client settings. |
 | Client | `productapp` | OIDC application client. |
-| Roles | `-` | [See Application Roles](#application-roles) |
-| Users | `-` | [See Application Users](#application-users) |
+| Roles | `-` | See below section for Application Roles |
+| Users | `-` | See below section for Application Users|
 
 #### Application Roles
 The following application roles are created in `workshop` realm.
@@ -77,13 +68,12 @@ The following application users and the corresponding role assignments are creat
 | `bob` | `admin` |
 | `charlie` | `other` |
 
-## Scripts
-
+### Scripts to interact with Keycloak
 The following scripts have been provided to interact with Keycloak and configure Istio request authentication and authorization resources from the terminal.
 
 | Name | Purpose | Arguments |
 |------|---------|-----------|
-| [`scripts/helpers.sh`](/modules/04-security/scripts/helpers.sh) | Contains helper functions to generate and inspect access tokens, apply authentication and authorization policies on ingress gateway, and print Keycloak admin console access information. | [See arguments](#script-arguments-helperssh) |
+| [`scripts/helpers.sh`](/modules/04-security/scripts/helpers.sh) | Contains helper functions to generate and inspect access tokens, apply authentication and authorization policies on ingress gateway, and print Keycloak admin console access information. | See below section|
 
 ### Script Arguments: `helpers.sh`
 
@@ -133,8 +123,6 @@ Below are some examples of using the helper script to perform various actions re
 **Note:** Remember to set the correct AWS region in the terminal window before invoking the script.
 For example, in the bash terminal window execute the following. Make sure the region is the one where the terraform stack has created the keycloak resources.
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 export AWS_REGION=us-west-2
 ```
@@ -148,8 +136,6 @@ export AWS_REGION=us-west-2
 
 ## Clean up
 Clean up all the resources using `terraform destroy` command.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 terraform destroy -auto-approve

@@ -4,15 +4,14 @@ Typically, to protect publicly accessible `istio-ingress` service load balancer 
 
 You can also import certificates issued by AWS Private CA configured in standard mode into ACM. AWS Private CA configured in short-lived mode is not supported. However, for this module a self-signed certificate is used for the internet facing `istio-ingress` load balancer endpoint to avoid creating another Private CA resource. The self-signed certificate has been generated and imported into ACM. The generated PEM-encoded self-signed certificate (`lb_ingress_cert.pem`) is also exported in the module directory (`04-security`).
 
-As part of the setup process, the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service. Describe the service to verify the annotations.
-<br/><br/>
+As part of the setup process, the imported self-signed ACM certificate is associated with the HTTPS listener of the `istio-ingress` load balancer resource using annotations on the `istio-ingress` service.
 
 ![Istio Ingress Gateway drawio](https://github.com/aws-samples/istio-on-eks/assets/71530829/08a1fa31-a61e-475c-b1be-ebc7deaa95d9)
 
 *Figure: Istio Ingress Gateway using ACM
 <br/><br/>
 
-**:hourglass_flowing_sand: Command Line Execution**
+**Describe the service to verify the annotations**
 
 ```bash
 kubectl get svc/istio-ingress -n istio-ingress -o jsonpath='{.metadata.annotations}' | jq -r
@@ -45,9 +44,7 @@ Note the below annotation values
 
 The application gateway definition is patched to add a server route for HTTPS traffic on port 443.
 
-Describe the `gateway` resource and verify that there are routes for port 80 and port 443 respectively.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Describe the `gateway` resource and verify that there are routes for port 80 and port 443 respectively**
 
 ```bash
 kubectl get gateway/productapp-gateway -n workshop -o jsonpath='{.spec.servers}' | jq -r
@@ -80,17 +77,15 @@ The output should be similar to below sample.
 ]
 ```
 
-To verify that the gateway is accepting HTTPS traffic and forwarding to the right application, first export the ingress gateway load balancer endpoint.
+**Verify that the gateway is accepting HTTPS traffic and forwarding to the right application**
 
-**:hourglass_flowing_sand: Command Line Execution**
+First export the ingress gateway load balancer endpoint.
 
 ```bash
 ISTIO_INGRESS_URL=$(kubectl get service/istio-ingress -n istio-ingress -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
 ```
 
 Next, send a request to the ingress gateway load balancer endpoint using `curl` referring to the exported self-signed certificate using the `--cacert` flag for certificate verification.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 curl --cacert ../lb_ingress_cert.pem https://$ISTIO_INGRESS_URL -s -o /dev/null -w "HTTP Response: %{http_code}\n"
@@ -102,9 +97,7 @@ The output should look similar to the sample output below.
 HTTP Response: 200
 ```
 
-Run a load test against the ingress gateway, so that its easy to visual the traffic in Kiali.
-
-**:hourglass_flowing_sand: Command Line Execution**
+**Run a load test against the ingress gateway, so that its easy to visual the traffic in Kiali**
 
 ```bash
 siege https://$ISTIO_INGRESS_URL -c 5 -d 10 -t 2M

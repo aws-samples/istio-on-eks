@@ -42,8 +42,8 @@ The following sequence depicts the Istio data plane request/response flow.
 
 ## Deploy
 
-### Disallow Requests with Missing Tokens
-Follow the steps in [Disallow requests with missing tokens](/modules/04-security/request-authn-authz/request-authentication/README.md#disallow-requests-with-missing-tokens) to reject requests with missing JWT tokens.
+### Deny Requests with Missing Tokens
+Follow the steps in [Deny requests with missing tokens](/modules/04-security/request-authentication/README.md#deny-requests-with-missing-tokens) to reject requests with missing JWT tokens.
 
 ### Gatekeeper Mutations
 This section leverages [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)'s [Mutation](https://open-policy-agent.github.io/gatekeeper/website/docs/mutation/) feature to inject OPA envoy external authorizer sidecar to the application pods.

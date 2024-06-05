@@ -1,0 +1,117 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+spec:
+  profile: default
+  meshConfig:
+    trustDomain: foo.com
+    trustDomainAliases:
+      - bar.com
+  values:
+    global:
+      meshID: devup-mesh
+      multiCluster:
+        clusterName: foo-eks-cluster
+      network: foo-network
+    # This is used to customize the sidecar template
+    sidecarInjectorWebhook:
+      templates:
+        spire: |
+          spec:
+            containers:
+            - name: istio-proxy
+              volumeMounts:
+              - name: workload-socket
+                mountPath: /run/secrets/workload-spiffe-uds
+                readOnly: true
+            volumes:
+              - name: workload-socket
+                csi:
+                  driver: "csi.spiffe.io"
+                  readOnly: true
+  components:
+    pilot:
+      k8s:
+        env:
+          # If enabled, if user introduces new intermediate plug-in CA, user need not to restart istiod to pick up certs. Istiod picks newly added intermediate plug-in CA certs and updates it. Plug-in new Root-CA not supported.
+          - name: AUTO_RELOAD_PLUGIN_CERTS
+            value: "true"
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        label:
+          istio: ingressgateway
+        k8s:
+          podAnnotations:
+            spiffe.io/federatesWith: "bar.com"
+          overlays:
+            - apiVersion: apps/v1
+              kind: Deployment
+              name: istio-ingressgateway
+              patches:
+                - path: spec.template.spec.volumes.[name:workload-socket]
+                  value:
+                    name: workload-socket
+                    csi:
+                      driver: "csi.spiffe.io"
+                      readOnly: true
+                - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[name:workload-socket]
+                  value:
+                    name: workload-socket
+                    mountPath: "/run/secrets/workload-spiffe-uds"
+                    readOnly: true
+      - name: istio-eastwestgateway
+        enabled: true
+        label:
+          istio: eastwestgateway
+          app: istio-eastwestgateway
+          topology.istio.io/network: foo-network
+        k8s:
+          podAnnotations:
+            spiffe.io/federatesWith: "bar.com"
+          overlays:
+            - apiVersion: apps/v1
+              kind: Deployment
+              name: istio-eastwestgateway
+              patches:
+                - path: spec.template.spec.volumes.[name:workload-socket]
+                  value:
+                    name: workload-socket
+                    csi:
+                      driver: "csi.spiffe.io"
+                      readOnly: true
+                - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[name:workload-socket]
+                  value:
+                    name: workload-socket
+                    mountPath: "/run/secrets/workload-spiffe-uds"
+                    readOnly: true
+          env:
+            - name: ISTIO_META_ROUTER_MODE
+              value: "sni-dnat"
+            - name: ISTIO_META_REQUESTED_NETWORK_VIEW
+              value: foo-network
+          service:
+            ports:
+              - name: status-port
+                port: 15021
+                targetPort: 15021
+              - name: tls
+                port: 15443
+                targetPort: 15443
+              - name: tls-istiod
+                port: 15012
+                targetPort: 15012
+              - name: tls-webhook
+                port: 15017
+                targetPort: 15017
+          serviceAnnotations:
+            service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+            service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+            service.beta.kubernetes.io/aws-load-balancer-type: "alb"
+            service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+            # These configurations fixed target group health checks
+            service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "traffic-port"
+            service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "tcp"
+            service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"

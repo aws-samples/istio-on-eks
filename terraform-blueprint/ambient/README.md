@@ -124,7 +124,7 @@ kubectl port-forward svc/tracing 16686:80 -n istio-system
 
     ```sh
     kubectl create namespace sample
-    kubectl label namespace sample istio-injection=enabled
+    kubectl label namespace sample istio.io/dataplane-mode=ambient
     ```
 
     ```text
@@ -252,11 +252,11 @@ kubectl port-forward svc/tracing 16686:80 -n istio-system
     ```sh
     kubectl get pods -n sample
     ```
-
+    
     ```text
-    NAME                           READY   STATUS    RESTARTS   AGE
-    helloworld-v1-b6c45f55-2x2xk   2/2     Running   0          50s
-    sleep-9454cc476-42zxr          2/2     Running   0          15s
+    NAME                             READY   STATUS    RESTARTS   AGE
+    helloworld-v1-64674bb6c8-5szqq   1/1     Running   0          26s
+    sleep-5577c64d7c-htrf8           1/1     Running   0          10s
     ```
 
 5. Connect to `helloworld` app from `sleep` app and verify if the connection uses envoy proxy

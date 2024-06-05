@@ -1,14 +1,34 @@
-# README
+# Istio Service Mesh with Spiffe/Spire Federation between EKS clusters
 
-Istio Service Mesh with Spire Federation between EKS clusters
+## Business Use Cases and benefits for Istio Service Mesh with Spiffe/Spire federation
+
+This pattern covers essential aspects of how to use Spiffe/Spire and Istio to bridge trust between multi-cluster Kubernetes service meshes. This allows microservices in different clusters to trust each other and communicate securely.
+
+**Increased security:** By using Spiffe/Spire and Istio, you can ensure that only authorized workloads are able to communicate with each other. This helps to protect your microservices from unauthorized access and malicious attacks.
+
+**Simplified management:** Spiffe/Spire and Istio provide a centralized way to manage trust policies for your microservices. This makes it easier to enforce security policies across multiple clusters.
+
+**Improved scalability:** Spiffe/Spire and Istio are designed to scale to large deployments. This makes them a good choice for organizations that need to secure a large number of microservices.
+
+
+![Istio Service Mesh with Spiffe/Spire federation](eks-istio-spire.png "Istio Service Mesh with Spiffe/Spire federation on Amazon EKS")
+
+## Prerequisites
+
+Ensure that you have installed the following tools locally:
+
+1. [awscli](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+2. [kubectl](https://kubernetes.io/docs/tasks/tools/)
+3. [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+4. [istioctl](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/)
 
 ## Steps
 
 ### Download the GitHub repository on your computer
 
 ```bash
-git clone https://github.com/ovaleanu/eks-istio-mesh-spire-fed.git
-cd eks-istio-mesh-spire-fed
+git clone https://github.com/aws-samples/istio-on-eks.git
+cd istio-on-eks/patterns/eks-istio-mesh-spire-federation
 ```
 
 ### Create the clusters

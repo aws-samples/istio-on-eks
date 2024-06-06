@@ -1,0 +1,15 @@
+---
+# This remains empty but needs to be present for proper ca functioning
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-ca-root-cert
+  namespace: default
+---
+# This remains empty but needs to be present for proper ca functioning
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-ca-root-cert
+  namespace: istio-system
+---

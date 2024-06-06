@@ -25,6 +25,10 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 
 ### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
 
+## Terraform Modules
+
+### [Terraform examples of EKS Cluster with Istio deployment](terraform-blueprint/README.md)
+
 ## 🔐 Contributions
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 

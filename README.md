@@ -14,25 +14,27 @@ observability in the modern distributed application landscape.
 This repository, organized in modules, will guide you step-by-step in setting 
 Istio on EKS and working with the most commonly observed service-mesh use cases.
 
-## 🧱 Modules 
+## Modules 
 
-### [Getting Started](modules/01-getting-started/README.md)
-### [Traffic Management](modules/02-traffic-management/README.md)
-### [Network Resiliency](modules/03-network-resiliency/README.md)
-### [Security](modules/04-security/README.md)
+#### [Getting Started](modules/01-getting-started/README.md)
+#### [Traffic Management](modules/02-traffic-management/README.md)
+#### [Network Resiliency](modules/03-network-resiliency/README.md)
+#### [Security](modules/04-security/README.md)
 
-## 💡 Patterns
+## Patterns
 
-### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
+#### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
+#### [Istio Service Mesh with Spiffe/Spire Federation between EKS clusters](patterns/eks-istio-mesh-spire-federation/README.md)
 
 ## Terraform Modules
 
-### [Terraform examples of EKS Cluster with Istio deployment](terraform-blueprint/README.md)
+#### [Sidecar Istio deployment](terraform-blueprint/sidecar/README.md)
+#### [Ambient Istio deployment](terraform-blueprint/ambient/README.md)
 
-## 🔐 Contributions
+## Contributions
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
-## 💼 License
+## License
 This library is licensed under the Apache 2.0 License.
 
 ## 🙌 Community

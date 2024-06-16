@@ -15,7 +15,7 @@ This pattern will address the challenge by achieving unified secure workload ide
 
 **Improved scalability:** Spiffe/Spire and Istio are designed to scale to large deployments. This makes them a good choice for organizations that need to secure a large number of microservices.
 
-![Istio Service Mesh with Spiffe/Spire federation](eks-istio-spire.png "Istio Service Mesh with Spiffe/Spire federation on Amazon EKS")
+![Istio Service Mesh with Spiffe/Spire federation](../../images/eks-istio-spire.png "Istio Service Mesh with Spiffe/Spire federation on Amazon EKS")
 
 ## Prerequisites
 
@@ -102,8 +102,75 @@ kubectl get po -A --context="${CTX_CLUSTER2}
 
 You should see similar to below:
 
-![](../../images/istio-spire-1.png)
-![](../../images/istio-spire-2.png)
+```bash
+kubectl get po -A --context $CTX_CLUSTER1
+NAMESPACE          NAME                                            READY   STATUS    RESTARTS        AGE
+amazon-guardduty   aws-guardduty-agent-dd78x                       1/1     Running   6 (3h29m ago)   3h32m
+amazon-guardduty   aws-guardduty-agent-v945w                       1/1     Running   0               3h32m
+amazon-guardduty   aws-guardduty-agent-zg9mr                       1/1     Running   0               3h32m
+cert-manager       cert-manager-55657857dd-zd8jl                   1/1     Running   0               3h28m
+cert-manager       cert-manager-cainjector-7b5b5d4786-gcnmd        1/1     Running   0               3h28m
+cert-manager       cert-manager-webhook-55fb5c9c88-wc9f9           1/1     Running   0               3h28m
+helloworld         helloworld-v1-6bb5b589d6-54fbk                  2/2     Running   0               44s
+istio-system       istio-eastwestgateway-6c585467fd-sxwpd          1/1     Running   0               42m
+istio-system       istio-ingressgateway-66595464dd-wplqc           1/1     Running   0               42m
+istio-system       istiod-fc9564898-mvnzx                          1/1     Running   0               42m
+kube-system        aws-load-balancer-controller-57765c4b45-mqgj7   1/1     Running   0               3h33m
+kube-system        aws-load-balancer-controller-57765c4b45-qr7r2   1/1     Running   0               3h33m
+kube-system        aws-node-4948g                                  2/2     Running   0               3h27m
+kube-system        aws-node-mfn2g                                  2/2     Running   0               3h27m
+kube-system        aws-node-xzgpb                                  2/2     Running   0               3h27m
+kube-system        coredns-86bbb5f9b5-bdqwj                        1/1     Running   0               3h27m
+kube-system        coredns-86bbb5f9b5-m7b2g                        1/1     Running   0               3h27m
+kube-system        ebs-csi-controller-54457b68b-7fkxj              6/6     Running   0               3h22m
+kube-system        ebs-csi-controller-54457b68b-rglqg              6/6     Running   0               3h27m
+kube-system        ebs-csi-node-4ccgg                              3/3     Running   0               3h27m
+kube-system        ebs-csi-node-g9bnb                              3/3     Running   0               3h27m
+kube-system        ebs-csi-node-pdxmz                              3/3     Running   0               3h27m
+kube-system        kube-proxy-7nkj2                                1/1     Running   0               3h27m
+kube-system        kube-proxy-gwxtb                                1/1     Running   0               3h27m
+kube-system        kube-proxy-j5zp8                                1/1     Running   0               3h27m
+sleep              sleep-86bfc4d596-pl72r                          2/2     Running   0               20s
+spire              spire-agent-bkk8q                               3/3     Running   0               52m
+spire              spire-agent-jb57z                               3/3     Running   0               52m
+spire              spire-agent-r9j86                               3/3     Running   0               52m
+spire              spire-server-0                                  2/2     Running   0               52m
+```
+
+```bash
+kubectl get po -A --context $CTX_CLUSTER2
+NAMESPACE          NAME                                            READY   STATUS    RESTARTS   AGE
+amazon-guardduty   aws-guardduty-agent-42twx                       1/1     Running   0          3h10m
+amazon-guardduty   aws-guardduty-agent-fxngx                       1/1     Running   0          3h10m
+amazon-guardduty   aws-guardduty-agent-tsn55                       1/1     Running   0          3h10m
+cert-manager       cert-manager-55657857dd-wcwjh                   1/1     Running   0          65m
+cert-manager       cert-manager-cainjector-7b5b5d4786-wmq2g        1/1     Running   0          65m
+cert-manager       cert-manager-webhook-55fb5c9c88-kn9kw           1/1     Running   0          65m
+helloworld         helloworld-v2-7fd66fcfdc-w7l7l                  2/2     Running   0          38s
+istio-system       istio-eastwestgateway-57d65dfc66-5qgwt          1/1     Running   0          41m
+istio-system       istio-ingressgateway-85b7dbbfd8-92pzg           1/1     Running   0          41m
+istio-system       istiod-64d84b9dff-pxg67                         1/1     Running   0          42m
+kube-system        aws-load-balancer-controller-7466ccb95b-gbksz   1/1     Running   0          3h11m
+kube-system        aws-load-balancer-controller-7466ccb95b-hb7l4   1/1     Running   0          3h11m
+kube-system        aws-node-gdbtw                                  2/2     Running   0          64m
+kube-system        aws-node-ndt5l                                  2/2     Running   0          64m
+kube-system        aws-node-vd4x2                                  2/2     Running   0          64m
+kube-system        coredns-86bbb5f9b5-tw8pq                        1/1     Running   0          64m
+kube-system        coredns-86bbb5f9b5-vm8zd                        1/1     Running   0          64m
+kube-system        ebs-csi-controller-c88bff885-6kt58              6/6     Running   0          64m
+kube-system        ebs-csi-controller-c88bff885-nhqqm              6/6     Running   0          59m
+kube-system        ebs-csi-node-7lc7n                              3/3     Running   0          64m
+kube-system        ebs-csi-node-jqw5n                              3/3     Running   0          64m
+kube-system        ebs-csi-node-jsdf6                              3/3     Running   0          64m
+kube-system        kube-proxy-57w59                                1/1     Running   0          64m
+kube-system        kube-proxy-pvzx2                                1/1     Running   0          64m
+kube-system        kube-proxy-wzblc                                1/1     Running   0          64m
+sleep              sleep-64cbcc4cd9-xrqvv                          2/2     Running   0          26s
+spire              spire-agent-bh4zq                               3/3     Running   0          51m
+spire              spire-agent-hvpt8                               3/3     Running   0          51m
+spire              spire-agent-tcv27                               3/3     Running   0          51m
+spire              spire-server-0                                  2/2     Running   0          51m
+```
 
 ### Check federation for east-west traffic between clusters
 From a sleep pod in `foo-eks-cluster`, curling the hello-world service receives responses from both v1 and v2 deployments, proving east-west gateway communication across clusters. This curl command is actually reaching the "hello-world" service in `foo-eks-cluster`. However, since federation is enabled between the two clusters, Spire has issued identities to the workloads in both clusters in a way that allows them to communicate seamlessly. So when the curl command is executed from the sleep pod, it receives responses from both the "hello-world-v1" deployment in `foo-eks-cluster` as well as the "hello-world-v2" deployment in `bar-eks-cluster`. This demonstrates that traffic is flowing freely across the east-west gateway between the two federated clusters, despite the workloads originating from different clusters with different root CAs. It proves that the federated Spire setup with exchanged trust bundles has successfully enabled secure mTLS communication for these workloads deployed across different clusters.
@@ -116,7 +183,15 @@ kubectl exec --context="${CTX_CLUSTER1}" -n sleep -c sleep \
 ```
 You should see this:
 
-![](../../images/istio-spire-3.png)
+```bash
+Hello version: v1, instance: helloworld-v1-6bb5b589d6-54fbk
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v1, instance: helloworld-v1-6bb5b589d6-54fbk
+Hello version: v1, instance: helloworld-v1-6bb5b589d6-54fbk
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v1, instance: helloworld-v1-6bb5b589d6-54fbk
+```
 
 ### Check federation for north-south traffic between clusters
 Initially, both the "hello-world-v1" deployment in `foo-eks-cluster` and "hello-world-v2" deployment in `bar-eks-cluster`  were running. Now lets scale down the "hello-world-v1" deployment in `foo-eks-cluster` to 0 replicas. This means there are no pods running for this deployment in `foo-eks-cluster`.
@@ -147,7 +222,15 @@ kubectl exec --context="${CTX_CLUSTER1}" -n sleep -c sleep \
 
 You should see this:
 
-![](../../images/istio-spire-5.png)
+```bash
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+Hello version: v2, instance: helloworld-v2-7fd66fcfdc-w7l7l
+```
 
 ## View the certificate trust chain
 We will deploy the bookinfo application to illustrate that the root CA is cert-manager and spire is the intermediate CA. With this we will state that:

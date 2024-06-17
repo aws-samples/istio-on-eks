@@ -25,11 +25,11 @@ provider "kubectl" {
 }
 
 # data "terraform_remote_state" "foo_vpc" {
-  # backend = "local"
+# backend = "local"
 # 
-  # config = {
-    # path = "${path.module}/../0.vpc/terraform.tfstate"
-  # }
+# config = {
+# path = "${path.module}/../0.vpc/terraform.tfstate"
+# }
 # }
 
 data "terraform_remote_state" "bar_vpc" {
@@ -54,7 +54,7 @@ locals {
 
   # foo_additional_sg_id = data.terraform_remote_state.foo_vpc.outputs.foo_additional_sg_id
   bar_additional_sg_id = data.terraform_remote_state.bar_vpc.outputs.bar_additional_sg_id
-  
+
   istio_namespace = "istio-system"
 
   tags = {
@@ -75,7 +75,7 @@ module "eks" {
   cluster_name                   = local.name
   cluster_version                = local.cluster_version
   cluster_endpoint_public_access = true
-  
+
   vpc_id     = data.terraform_remote_state.bar_vpc.outputs.bar_vpc_id
   subnet_ids = data.terraform_remote_state.bar_vpc.outputs.bar_subnet_ids
 
@@ -106,14 +106,6 @@ module "eks" {
       type                          = "ingress"
       source_cluster_security_group = true
     }
-    # ingress_15021 = {
-      # description                   = "Cluster API to nodes ports/protocols"
-      # protocol                      = "TCP"
-      # from_port                     = 15021
-      # to_port                       = 15021
-      # type                          = "ingress"
-    # source_cluster_security_group = true
-    # }
     egress_all = {
       description      = "Node all egress"
       protocol         = "-1"
@@ -129,18 +121,18 @@ module "eks" {
     bar_nodes = {
       instance_types = ["m5.large"]
 
-      min_size     = 1
-      max_size     = 2
-      desired_size = 2
+      min_size               = 1
+      max_size               = 2
+      desired_size           = 2
       vpc_security_group_ids = [local.bar_additional_sg_id]
     }
 
     bar_spire_server = {
       instance_types = ["m5.large"]
 
-      min_size     = 1
-      max_size     = 1
-      desired_size = 1
+      min_size               = 1
+      max_size               = 1
+      desired_size           = 1
       vpc_security_group_ids = [local.bar_additional_sg_id]
 
       labels = {
@@ -165,7 +157,7 @@ module "eks" {
 ################################################################################
 
 module "eks_blueprints_addons" {
-  source = "aws-ia/eks-blueprints-addons/aws"
+  source  = "aws-ia/eks-blueprints-addons/aws"
   version = "~> 1.3"
 
   cluster_name      = module.eks.cluster_name
@@ -178,21 +170,21 @@ module "eks_blueprints_addons" {
     aws-ebs-csi-driver = {
       service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
     }
-    vpc-cni    = {
+    vpc-cni = {
       preserve = true
     }
     kube-proxy = {
       preserve = true
     }
-    coredns    = {
+    coredns = {
       preserve = true
-    } 
+    }
   }
-  
+
   enable_aws_load_balancer_controller = true
-  enable_cert_manager = true
+  enable_cert_manager                 = true
   cert_manager = {
-    chart_version    = "v1.13.1"
+    chart_version = "v1.13.1"
   }
 
   tags = local.tags

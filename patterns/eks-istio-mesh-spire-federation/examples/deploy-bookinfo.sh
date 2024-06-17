@@ -5,7 +5,7 @@ export CTX_CLUSTER2=bar-eks-cluster
 
 kubectl config use-context ${CTX_CLUSTER2}
 
-istioctl kube-inject -f bookinfo-with-spire-template.yaml | kubectl apply -f -
+istioctl kube-inject -f ./examples/bookinfo-with-spire-template.yaml | kubectl apply -f -
 sleep 6
 
 echo " >>>Check whether SPIRE has issued an identity to the workload"

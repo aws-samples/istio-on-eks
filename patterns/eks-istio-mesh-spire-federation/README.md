@@ -285,7 +285,9 @@ Split the `chain.pem` and save the two certificates in separate files. Use the o
 
 ```bash
 split -p "-----BEGIN CERTIFICATE-----" chain.pem cert-
+```
 
+```bash
 ls cert-a*
 cert-aa  cert-ab
 ```
@@ -358,7 +360,7 @@ Certificate:
         53:9e:f4:6e
 ```
 
-Open `cert-aa` certificate and you will notice Spire is the intermediate autority issuing certicate to productpage workload
+Open `cert-aa` certificate and you will notice Spire is the intermediate autority issuing certificate to the productpage workload
 
 ```bash
 openssl x509 -noout -text -in cert-aa

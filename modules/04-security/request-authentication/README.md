@@ -50,9 +50,7 @@ separator, to be present in the request and deny all other requests.
 
 ### Enable request authentication
 
-The [request authentication template](./ingress-requestauthentication-template.yaml) contains `ISSUER` and `JWKS_URI` placeholders that are replaced by the helper script. Apply request authentication policy to the ingress gateway.
-
-**:hourglass_flowing_sand: Command Line Execution**
+The below command uses the helpers.sh script to apply a RequestAuthentication policy to the ingress gateway. The policy is defined in a [request authentication template](./ingress-requestauthentication-template.yaml) file, and the script replaces placeholders for the ISSUER and JWKS_URI values with the actual values from the Keycloak OIDC provider.
 
 ```bash
 ../scripts/helpers.sh --authn
@@ -97,7 +95,7 @@ Spec:
 Events:       <none>
 ```
 
-Note the fields under `Jwt Rules`. The `Audiences` field ensures the token is intended for the `productapp` application only.
+Note: the fields under `Jwt Rules`. The `Audiences` field ensures the token is intended for the `productapp` application only.
 The `Issuer` and `Jwks Uri` fields ensure the token is vended and signed by the right Keycloak instance. 
 The `Forward Original Token` field ensures the original JWT is propagated to the upstream service.
 

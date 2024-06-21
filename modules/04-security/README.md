@@ -1,10 +1,10 @@
 # Module 4 - Security
 
-This module will cover security related capabilities of Istio service-mesh on Amazon EKS.
+This module will cover the security related capabilities of Istio service-mesh on Amazon EKS.
 
 ## Prerequisites:
 
-To be able to work on this module you should meet the following prerequisites.Ensure that you have the following tools installed locally:
+To be able to work on this module you should meet the following prerequisites. Ensure that you have the following tools installed locally:
   * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
   * [terraform](https://developer.hashicorp.com/terraform/install)
   * [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
@@ -17,7 +17,7 @@ To be able to work on this module you should meet the following prerequisites.En
 ## Setup
 This module will create its own EKS cluster with secure Istio workload configurations.
 
-**Note**: Configuring this module in an existing cluster is not supported.
+**Note: Configuring this module in an existing cluster is not supported.**
 
 Provision an EKS cluster with Istio and the security module resources by executing the below commands.
 
@@ -41,7 +41,7 @@ The terraform stack creates the following resources.
   * Workload microservices with an HTTPS route
 
 ### Install Observability Tools
-Use the following code snippet to add the Istio Observability Add-ons on the EKS cluster with deployed Istio.
+Use the following code snippet to add the Istio Observability add-ons to the EKS cluster with deployed Istio.
 ```
 for ADDON in kiali jaeger prometheus grafana
 do
@@ -57,7 +57,7 @@ kubectl port-forward svc/kiali 8080:20001 -n istio-system
 ```
 
 ### Keycloak resources
-Above setup installs Keycloak and creates the following Keycloak resources for request authentication and external authorization modules.
+The above setup installs Keycloak and creates the following Keycloak resources for request authentication and external authorization modules.
 
 | Resource Type | Name | Purpose |
 |---------------|------|---------|
@@ -67,7 +67,7 @@ Above setup installs Keycloak and creates the following Keycloak resources for r
 | Users | `-` | See below section for Application Users|
 
 #### Application Roles
-The following application roles are created in `workshop` realm.
+The following application roles are created in the `workshop` realm.
 
 | Role | Purpose |
 |------|---------------|
@@ -76,7 +76,7 @@ The following application roles are created in `workshop` realm.
 | `other` | `-` |
 
 #### Application Users
-The following application users and the corresponding role assignments are created in `workshop` realm.
+The following application users and the corresponding role assignments are created in the `workshop` realm.
 
 | User | Role |
 |------|------|
@@ -93,7 +93,7 @@ The following scripts have been provided to interact with Keycloak and configure
 
 ### Script Arguments: `helpers.sh`
 
-Following table lists the arguments of `helpers.sh` script.
+The following table lists the arguments of `helpers.sh` script:
 
 | Short Form | Long Form | Value Type | Required | Default | Description |
 |------------|-----------|------------|----------|---------|-------------|
@@ -113,7 +113,7 @@ Following table lists the arguments of `helpers.sh` script.
 | `-v` | `--verbose` | `-` | No | `-` | Enable verbose output. |
 
 #### Mutually Exclusive Options
-Below options cannot appear together for an invocation of this script.
+The below options cannot appear together for an invocation of this script.
   * `-a`, `--admin`
   * `-c`, `--console`
   * `-g`, `--generate`

@@ -40,22 +40,6 @@ The terraform stack creates the following resources.
   * Gatekeeper for mutating workload deployments to enforce Open Policy Agent (OPA) based external authorization
   * Workload microservices with an HTTPS route
 
-### Install Observability Tools
-Use the following code snippet to add the Istio Observability add-ons to the EKS cluster with deployed Istio.
-```
-for ADDON in kiali jaeger prometheus grafana
-do
-    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/$ADDON.yaml"
-    kubectl apply -f $ADDON_URL
-done
-```
-
-#### Configure Port Forwarding for Kiali
-Run the following command in the terminal session to port-forward kiali traffic on to a designated port on your localhost.
-```
-kubectl port-forward svc/kiali 8080:20001 -n istio-system
-```
-
 ### Keycloak resources
 The above setup installs Keycloak and creates the following Keycloak resources for request authentication and external authorization modules.
 
@@ -141,6 +125,22 @@ For example, in the bash terminal window execute the following. Make sure the re
 
 ```bash
 export AWS_REGION=us-west-2
+```
+
+### Install Observability Tools
+Use the following code snippet to add the Istio Observability add-ons to the EKS cluster with deployed Istio.
+```
+for ADDON in kiali jaeger prometheus grafana
+do
+    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/$ADDON.yaml"
+    kubectl apply -f $ADDON_URL
+done
+```
+
+#### Configure Port Forwarding for Kiali
+Run the following command in the terminal session to port-forward kiali traffic on to a designated port on your localhost.
+```
+kubectl port-forward svc/kiali 8080:20001 -n istio-system
 ```
 
 ## 🧱 Sub Modules of Security

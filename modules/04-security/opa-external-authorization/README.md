@@ -201,7 +201,7 @@ resolution of the external authorizer endpoint by the Istio proxies. This redire
 to later relocate the external authorization service endpoint without updating the extension provider configuration in the
 Istio mesh config as shown later.
 
-Inspect the file [`opa-ext-authz-serviceentry.yaml`](/modules/04-security/request-authn-authz/opa-external-authorization/opa-ext-authz-serviceentry.yaml) for the `ServiceEntry` definition.
+Inspect the file [`opa-ext-authz-serviceentry.yaml`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/opa-ext-authz-serviceentry.yaml) for the `ServiceEntry` definition.
 
 Note the `hosts` list value of `opa-ext-authz-grpc.local` and `ports` list value of `9191`. These values are registered
 with Istio in the next step.
@@ -353,7 +353,7 @@ authorizationpolicy.security.istio.io/productapp created
 ### Write the OPA policy
 
 The OPA authorization policy is written in [Rego policy language](https://www.openpolicyagent.org/docs/latest/policy-language/).
-The policy file [`policy.rego`](/modules/04-security/request-authn-authz/opa-external-authorization/policy.rego) is kept separate to allow
+The policy file [`policy.rego`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/policy.rego) is kept separate to allow
 policy authors to test the policies independently by using `opa test` command.
 
 For simplicity the policy is statically compiled and loaded in memory with the help of `opa-policy` ConfigMap created later. A more scalable and robust production implementation will typically leverage bundles and the set of [Management APIs](https://www.openpolicyagent.org/docs/latest/management-introduction/) OPA exposes to enable unified and logically centralized policy management.
@@ -465,11 +465,11 @@ The following table lists the user role assignments.
 | `bob` | `admin` |
 | `charlie` | `other` |
 
-Refer the [`policy.rego`](/modules/04-security/request-authn-authz/opa-external-authorization/policy.rego) file for the policy evaluation logic.
+Refer the [`policy.rego`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/policy.rego) file for the policy evaluation logic.
 
 ### Test the policy rules
 
-The [`policy_test.rego`](/modules/04-security/request-authn-authz/opa-external-authorization/policy_test.rego) file contains test cases for the policy specified in `policy.rego` file.
+The [`policy_test.rego`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/policy_test.rego) file contains test cases for the policy specified in `policy.rego` file.
 
 #### Sample test scenario: `guest` role is denied access to `frontend` `POST /products`
 The below snippet tests that user `alice` having `guest` role is not allowed to call `POST /products` hosted
@@ -593,7 +593,7 @@ PASS: xx/xx
 
 After authoring and testing the policy rules, the next step is to generate a ConfigMap by importing the policy file. To achieve this, [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/)'s built-in [ConfigMapGenerator](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/#_configmapgenerator_) is used.
 
-The policy file is imported through [`kustomization.yaml`](/modules/04-security/request-authn-authz/opa-external-authorization/kustomization.yaml) to create the `opa-policy` ConfigMap in the `workshop` namespace. This ConfigMap is mounted as a volume in the injected `opa-istio` sidecar as explained earlier.
+The policy file is imported through [`kustomization.yaml`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/kustomization.yaml) to create the `opa-policy` ConfigMap in the `workshop` namespace. This ConfigMap is mounted as a volume in the injected `opa-istio` sidecar as explained earlier.
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1

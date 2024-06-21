@@ -773,8 +773,6 @@ HTTP Response: 200
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom HTTP request header.
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
   | grep "\"x-req-id\":\"$REQ_ID\"" \
@@ -806,8 +804,6 @@ HTTP Response: 200
 ```
 
 Verify that the decision log shows a log entry with a `true` result matching the `x-req-id` custom HTTP request header.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
@@ -841,8 +837,6 @@ HTTP Response: 403
 
 Verify that the decision log shows a log entry with a `false` result matching the `x-req-id` custom HTTP request header.
 
-**:hourglass_flowing_sand: Command Line Execution**
-
 ```bash
 kubectl logs deployment/frontend -c opa-istio -n workshop \
   | grep "\"x-req-id\":\"$REQ_ID\"" \
@@ -860,8 +854,6 @@ It is possible that the log entries may get rotated out as newer requests keep f
 #### Unauthorized request to `POST /products` with `guest` role
 
 Generate a `curl` request with a randomly generated `x-req-id` custom HTTP request header to allow us to uniquely locate the decision log entry when searching the OPA decision log.
-
-**:hourglass_flowing_sand: Command Line Execution**
 
 ```bash
 REQ_ID=$RANDOM

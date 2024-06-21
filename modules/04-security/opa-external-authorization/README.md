@@ -79,7 +79,7 @@ replicaset.apps/gatekeeper-controller-manager-69d88fcd4f   3         3         3
 
 Add the `Assign` rules to inject the OPA server container as a sidecar in the selected workload pods that you want to protect using external OPA based access control policies.
 
-The file [`opa-ext-authz-sidecar-assign.yaml`](/modules/04-security/request-authn-authz/opa-external-authorization/opa-ext-authz-sidecar-assign.yaml) contains the `Assign` rules.
+The file [`opa-ext-authz-sidecar-assign.yaml`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/opa-ext-authz-sidecar-assign.yaml) contains the `Assign` rules.
 
 ```yaml
 apiVersion: mutations.gatekeeper.sh/v1
@@ -315,7 +315,7 @@ namespace/workshop labeled
 
 ### Add `AuthorizationPolicy` with `CUSTOM` action
 
-The file [`productapp-authorizationpolicy.yaml`](/modules/04-security/request-authn-authz/opa-external-authorization/productapp-authorizationpolicy.yaml)
+The file [`productapp-authorizationpolicy.yaml`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/productapp-authorizationpolicy.yaml)
 contains [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/)
 definition for `workshop` namespace with `CUSTOM` action that forwards the access control decisions to the configured external authorizer.
 

@@ -948,4 +948,4 @@ kubectl rollout restart deployment/catalogdetail2 -n workshop
 
 Congratulations!!! You've now successfully validated the OPA based external authorization setup in Istio on Amazon EKS. :tada:
 
-You can either move on to the other sub-modules or if you're done with this module then refer to [Clean up](../README.md#clean-up) to clean up all the resources provisioned in this module.
+You can either move on to the other sub-modules or if you're done with this module then refer to [Clean up](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/README.md#clean-up) to clean up all the resources provisioned in this module.

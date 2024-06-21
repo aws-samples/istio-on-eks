@@ -361,7 +361,7 @@ authorizationpolicy.security.istio.io/productapp created
 ### Write the OPA policy
 
 The OPA authorization policy is written in [Rego policy language](https://www.openpolicyagent.org/docs/latest/policy-language/).
-The policy file [`policy.rego`](/modules/04-security/request-authn-authz/opa-external-authorization/policy.rego) is kept separate to allow
+The policy file [`policy.rego`](https://github.com/aws-samples/istio-on-eks/blob/main/modules/04-security/opa-external-authorization/policy.rego) is kept separate to allow
 policy authors to test the policies independently by using `opa test` command.
 
 For simplicity the policy is statically compiled and loaded in memory with the help of `opa-policy` ConfigMap

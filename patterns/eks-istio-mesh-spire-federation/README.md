@@ -96,8 +96,8 @@ Two separate deployments named "hello-world-v1" and "hello-world-v2" are created
 ### Check if everything is installed 
 
 ```bash
-kubectl get po -A --context="${CTX_CLUSTER1}
-kubectl get po -A --context="${CTX_CLUSTER2}
+kubectl get po -A --context="${CTX_CLUSTER1}"
+kubectl get po -A --context="${CTX_CLUSTER2}"
 ```
 
 You should see similar to below:

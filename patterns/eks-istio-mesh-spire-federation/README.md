@@ -90,7 +90,7 @@ For the Istio installation, we are using the Istio Operator to deploy Istio on t
 Two separate deployments named "hello-world-v1" and "hello-world-v2" are created, one in each cluster (`foo-eks-cluster` and `bar-eks-cluster` respectively). Both these deployments are configured to use the same Kubernetes service name "hello-world". Additionally, a separate "sleep" deployment (just serving as a test client) is also created in `foo-eks-cluster`.
 
 ```bash
-./examples/deploy-heloworld.sh
+./examples/deploy-helloworld.sh
 ```
 
 ### Check if everything is installed 

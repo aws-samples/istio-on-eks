@@ -424,13 +424,13 @@ Certificate:
 Modify the rotation period for istiod certificates from 60 days (1440 hours) to 30 days (720 hours), run the following command:
 
 ```bash
-kubectl -f ./cert-manager/cert-rotation.yaml --context $CTX_CLUSTER1
+kubectl apply -f ./cert-manager/cert-rotation.yaml --context=$CTX_CLUSTER1
 ```
 
 Check `istiod` logs
 
 ```bash
-kubectl logs -l app=istiod -n istio-system -f
+kubectl logs -l app=istiod -n istio-system -f --context=$CTX_CLUSTER1
 ```
 
 ## Cleanup

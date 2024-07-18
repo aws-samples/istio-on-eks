@@ -90,14 +90,14 @@ For the Istio installation, we are using the Istio Operator to deploy Istio on t
 Two separate deployments named "hello-world-v1" and "hello-world-v2" are created, one in each cluster (`foo-eks-cluster` and `bar-eks-cluster` respectively). Both these deployments are configured to use the same Kubernetes service name "hello-world". Additionally, a separate "sleep" deployment (just serving as a test client) is also created in `foo-eks-cluster`.
 
 ```bash
-./examples/deploy-heloworld.sh
+./examples/deploy-helloworld.sh
 ```
 
 ### Check if everything is installed 
 
 ```bash
-kubectl get po -A --context="${CTX_CLUSTER1}
-kubectl get po -A --context="${CTX_CLUSTER2}
+kubectl get po -A --context="${CTX_CLUSTER1}"
+kubectl get po -A --context="${CTX_CLUSTER2}"
 ```
 
 You should see similar to below:
@@ -424,13 +424,13 @@ Certificate:
 Modify the rotation period for istiod certificates from 60 days (1440 hours) to 30 days (720 hours), run the following command:
 
 ```bash
-kubectl -f ./cert-manager/cert-rotation.yaml --context $CTX_CLUSTER1
+kubectl apply -f ./cert-manager/cert-rotation.yaml --context=$CTX_CLUSTER1
 ```
 
 Check `istiod` logs
 
 ```bash
-kubectl logs -l app=istiod -n istio-system -f
+kubectl logs -l app=istiod -n istio-system -f --context=$CTX_CLUSTER1
 ```
 
 ## Cleanup

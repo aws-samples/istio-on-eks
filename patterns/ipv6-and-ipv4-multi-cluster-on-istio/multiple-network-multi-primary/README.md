@@ -11,7 +11,7 @@ This repository demonstrates how to deploy Istio in a multi-network, multi-prima
   * Cluster-2: Primary cluster in network2, using IPv6
   
 
-![Istio Multi-Cluster Architecture](istio-multi-cluster-architecture.png "Istio Multi-Cluster Architecture on Amazon EKS")
+![Istio Multi-Primary Architecture](../images/MULTINW.jpg "Istio Multi-Primary on Multi Network")
 
 ## Prerequisites
 
@@ -29,48 +29,86 @@ To deploy the terraform repo, run the commands shown below:
 ./scripts/deploy.sh 
 ```
 
-After running the command successfully, set the kubeconfig for both EKS clusters:
-```sh 
-source scripts/set-cluster-contexts.sh
-```
+## Validation and Testing
 
-> **Note:** If using different cluster names other than the default `eks-1` and 
-`eks-2`, use the following command:
+* Validate the deployed components
+    * Set the context for both clusters using the following commands: 
+        ```shell
+        export CLUSTER_1=cluster-1
+        export CLUSTER_2=cluster-2
+        export AWS_DEFAULT_REGION=$(aws configure get region)
+        export AWS_ACCOUNT_NUMBER=$(aws sts get-caller-identity --query "Account" --output text)
+        
+        aws eks update-kubeconfig --name $CLUSTER_1 --region $AWS_DEFAULT_REGION
+        aws eks update-kubeconfig --name $CLUSTER_2 --region $AWS_DEFAULT_REGION
+        
+        export CTX_CLUSTER_1=arn:aws:eks:$AWS_DEFAULT_REGION:${AWS_ACCOUNT_NUMBER}:cluster/$CLUSTER_1
+        export CTX_CLUSTER_2=arn:aws:eks:$AWS_DEFAULT_REGION:${AWS_ACCOUNT_NUMBER}:cluster/$CLUSTER_2
+        ```
+    * Check the worker nodes on each cluster using the following command: 
+        ```shell
+        kubectl get nodes -o wide --context=$CTX_CLUSTER_1
+        
+        kubectl get nodes -o wide --context=$CTX_CLUSTER_2
+        ```
+    * Check Istio components running on the istio-system namespace
+        ```shell
+        kubectl get pods,svc -n istio-system --context=$CTX_CLUSTER_1
+        
+        kubectl get pods,svc -n istio-system --context=$CTX_CLUSTER_2
+        ```
+    * Set the flags to enable PODs in an IPv4 cluster support IPv6 egress and vice versa
+        
+        Run this command to set ENABLE_V6_EGRESS flag on Cluster-1: 
+        ```shell
+        kubectl patch daemonset aws-node -n kube-system -p '{"spec": {"template": {"spec": {"initContainers": [{"env":[{"name":"ENABLE_V6_EGRESS","value":"true"}],"name":"aws-vpc-cni-init"}]}}}}' --context=$CTX_CLUSTER_1
+        ```
+        
+        Run this command to set ENABLE_V4_EGRESS flag on Cluster-2:
+        ```shell
+        kubectl patch daemonset aws-node -n kube-system -p '{"spec": {"template": {"spec": {"initContainers": [{"env":[{"name":"ENABLE_V4_EGRESS","value":"true"}],"name":"aws-vpc-cni-init"}]}}}}' --context=$CTX_CLUSTER_2
+        ```
 
-```sh 
-source scripts/set-cluster-contexts.sh eks_cluster_name_1 eks_cluster_name_2
-```
+* Test cross cluster communication
+    
+    To verify the multi-cluster setup, follow the steps outlined in the official Istio documentation: https://istio.io/latest/docs/setup/install/multicluster/verify/
+    * This guide walks you through deploying sample applications on both clusters and testing cross-cluster communication using curl commands. 
+    * Review the deployed sample apps using the commands below:
+        
+        ```shell
+        kubectl get pods,svc -n sample --context=$CTX_CLUSTER_1
+        
+        kubectl get pods,svc -n sample --context=$CTX_CLUSTER_2
+        ```
+    * Now that the sample apps are deployed, run the following command from each cluster to test the cross cluster communication
+        
+        From Cluster-1: 
+        ```shell
+        for i in {1..10}
+        do
+        kubectl exec --context="${CTX_CLUSTER_1}" -n sample -c curl \
+        "$(kubectl get pod --context="${CTX_CLUSTER_1}" -n sample -l \
+        app=curl -o jsonpath='{.items[0].metadata.name}')" \
+        -- curl -sS helloworld.sample:5000/hello
+        done
+        ```
+        
+        From Cluster-2:
+        ```shell
+        for i in {1..10}
+        do
+        kubectl exec --context="${CTX_CLUSTER_2}" -n sample -c sleep \
+        "$(kubectl get pod --context="${CTX_CLUSTER_2}" -n sample -l \
+        app=curl -o jsonpath='{.items[0].metadata.name}')" \
+        -- curl -sS helloworld.sample:5000/hello
+        done
+        ```
+        
+        Output: 
+        Verify in the response the HelloWorld version should toggle between v1 and v2 similar to the image below
+        ![Sample Output](../images/Output2.png "Sample Output showing v1 and v2 versions")
 
 
-## Testing
-
-
-Run the following command to check cross-cluster loadbalancing from the first 
-cluster.
-
-```
-for i in {1..10}
-do
-kubectl exec --context="${CTX_CLUSTER_1}" -n sample -c curl \
-"$(kubectl get pod --context="${CTX_CLUSTER_1}" -n sample -l \
-app=curl -o jsonpath='{.items[0].metadata.name}')" \
--- curl -sS helloworld.sample:5000/hello
-done
-```
-Also test similar command to check cross-cluster loadbalancing from the second 
-cluster.
-
-```
-for i in {1..10}
-do
-kubectl exec --context="${CTX_CLUSTER_2}" -n sample -c curl \
-"$(kubectl get pod --context="${CTX_CLUSTER_2}" -n sample -l \
-app=curl -o jsonpath='{.items[0].metadata.name}')" \
--- curl -sS helloworld.sample:5000/hello
-done
-```
-
-Verify that the responses for both above commands return HelloWorld version toggling between v1 and v2 
 
 ## Destroy 
 ```sh 

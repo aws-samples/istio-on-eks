@@ -6,6 +6,8 @@ This repository demonstrates how to deploy Istio in a multi-primary configuratio
 
 In this setup, we deploy two Amazon EKS clusters (IPv4 and IPv6) in a single VPC, configuring them with Istio in a Multi-Primary setup. The Istio will be set-up to operate in a [Multi-Primary](https://istio.io/latest/docs/setup/install/multicluster/multi-primary/) way where services are shared across clusters.
 
+![Istio Multi-Primary Architecture](../images/Singlenetwork.jpg "Istio Multi-Primary on Single Network")
+
 * Deploy a VPC with additional security groups to allow cross-cluster communication and communication from nodes to the other cluster API Server endpoint
 * Deploy 2 EKS Cluster with one managed node group in an VPC
 * Add node_security_group rules for port access required for Istio communication
@@ -53,6 +55,7 @@ Ensure that you have the following tools installed locally:
 1. [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 2. [kubectl](https://Kubernetes.io/docs/tasks/tools/)
 3. [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+4. [istioctl](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/)
 
 ## Deploy
 
@@ -175,12 +178,10 @@ cd..
         ```
         
         Output: 
-        Verify in the response the HelloWorld version should toggle between v1 and v2
+        Verify in the response the HelloWorld version should toggle between v1 and v2 similar to the image below
+        ![Sample Output](../images/Output1.png "Sample Output showing v1 and v2 versions")
 
 
-```
-This script deploy the sample application to both clusters and run curl from a pod in one cluster to a service that is deployed in both cluster. You should expect to see responses from both `V1` and `V2` of the sample application.
-The script run 4 `curl` command from cluster-1 to cluster-2 and vice versa
 ## Destroy
 
 To teardown and remove the resources created in this example:

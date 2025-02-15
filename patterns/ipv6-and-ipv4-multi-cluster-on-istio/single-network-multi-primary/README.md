@@ -53,6 +53,7 @@ Ensure that you have the following tools installed locally:
 1. [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 2. [kubectl](https://Kubernetes.io/docs/tasks/tools/)
 3. [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+4. [istioctl](https://istio.io/latest/docs/ops/diagnostic-tools/istioctl/)
 
 ## Deploy
 
@@ -178,9 +179,6 @@ cd..
         Verify in the response the HelloWorld version should toggle between v1 and v2
 
 
-```
-This script deploy the sample application to both clusters and run curl from a pod in one cluster to a service that is deployed in both cluster. You should expect to see responses from both `V1` and `V2` of the sample application.
-The script run 4 `curl` command from cluster-1 to cluster-2 and vice versa
 ## Destroy
 
 To teardown and remove the resources created in this example:

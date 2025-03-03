@@ -142,9 +142,9 @@ Hello version: v2, instance: helloworld-v2-7f46498c69-5g9rk
 ```
 ## Known Issues
 
-As of now because of how the Istio has been setup in EKS IPv6 clusters, the 
-`istioctl` doesn't work well with IPv6 addresses. We are aware of it and would 
-find a solutions for it in the next iteration.
+Currently, because of how the Istio has been setup in EKS IPv6 clusters, the 
+`istioctl` CLIU does not work correctly with IPv6 addresses. We are aware of this 
+issue and would find a solution to it in the next iteration.
 
 ## Troubleshooting
 

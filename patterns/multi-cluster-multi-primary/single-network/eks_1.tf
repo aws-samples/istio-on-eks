@@ -51,8 +51,13 @@ module "eks_1" {
     vpc-cni = {
       configuration_values = jsonencode({
         env = {
-          ENABLE_V6_EGRESS = "true"
-          ENABLE_V4_EGRESS = "true"
+          ENABLE_V6_EGRESS = local.eks_1_IPv6 == true ? "false" : "true"
+          ENABLE_V4_EGRESS = local.eks_1_IPv6 == true ? "true" : "false"
+        }
+        init = {
+          env = {
+            ENABLE_V6_EGRESS = local.eks_1_IPv6 == true ? "false" : "true"
+          }
         }
       })
     }
@@ -90,6 +95,17 @@ module "eks_1" {
   }
 
   tags = local.tags
+}
+
+resource "aws_security_group_rule" "allow_egress_all_ipv6_1" {
+  count             = local.eks_1_IPv6 == true ? 0 : 1
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  ipv6_cidr_blocks  = ["::/0"]
+  security_group_id = module.eks_1.node_security_group_id
+  description       = "Allow egress to any IPv6 address"
 }
 
 resource "aws_security_group_rule" "allow_ingress_from_eks_2" {

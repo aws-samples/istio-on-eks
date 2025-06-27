@@ -14,6 +14,8 @@ Refer to the [Istio documentation](https://istio.io/latest/docs/concepts/) for d
 
 Refer to the [prerequisites](https://aws-ia.github.io/terraform-aws-eks-blueprints/getting-started/#prerequisites) and run the following command to deploy this pattern:
 
+> ✅ Note: The EKS clusters created for this usecase will use EKS Auto Mode
+
 ```sh
 terraform init
 terraform apply --auto-approve
@@ -33,7 +35,7 @@ cluster with deployed Istio.
 ```sh
 for ADDON in kiali jaeger prometheus grafana
 do
-    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.22/samples/addons/$ADDON.yaml"
+    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.26/samples/addons/$ADDON.yaml"
     kubectl apply -f $ADDON_URL
 done
 ```

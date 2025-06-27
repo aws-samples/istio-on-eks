@@ -4,17 +4,17 @@
 
 catalogdetail1:
   image:
-    repository: public.ecr.aws/u2g6w7p2/eks-workshop-demo/catalog_detail
+    repository: public.ecr.aws/u0x7j7d5/istio-on-eks/catalog_detail
     tag: "1.0"
 
 catalogdetail2:
   image:
-    repository: public.ecr.aws/u2g6w7p2/eks-workshop-demo/catalog_detail
+    repository: public.ecr.aws/u0x7j7d5/istio-on-eks/catalog_detail
     tag: "2.0"
 
 productcatalog:
   image:
-    repository: public.ecr.aws/u2g6w7p2/eks-workshop-demo/product_catalog
+    repository: public.ecr.aws/u0x7j7d5/istio-on-eks/product_catalog
     tag: "1.0"
 
   env:
@@ -23,7 +23,7 @@ productcatalog:
 
 frontend:
   image:
-    repository: public.ecr.aws/u2g6w7p2/eks-workshop-demo/frontend_node
+    repository: public.ecr.aws/u0x7j7d5/istio-on-eks/frontend_node
     tag: "2.0"
 
   env:

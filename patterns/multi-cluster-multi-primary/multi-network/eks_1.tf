@@ -185,6 +185,24 @@ module "eks_1_addons" {
   cluster_version   = module.eks_1.cluster_version
   oidc_provider_arn = module.eks_1.oidc_provider_arn
 
+  enable_aws_load_balancer_controller = true
+  aws_load_balancer_controller = {
+    set = [
+      {
+        name  = "vpcId"
+        value = module.vpc_1.vpc_id
+      },
+      {
+        name  = "podDisruptionBudget.maxUnavailable"
+        value = 1
+      },
+      {
+        name  = "enableServiceMutatorWebhook"
+        value = "false"
+      }
+    ]
+  }
+
   helm_releases = {
     istio-base = {
       chart         = "base"

@@ -32,7 +32,7 @@ provider "helm" {
 
 module "vpc_1" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
+  version = "~> 6.0.1"
 
   name = "${local.eks_1_name}-vpc"
   cidr = local.vpc_cidr
@@ -72,7 +72,7 @@ module "vpc_1" {
 
 module "eks_1" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.33.1"
+  version = "~> 20.37.1"
 
   cluster_name                             = local.eks_1_name
   cluster_version                          = local.eks_cluster_version
@@ -178,7 +178,7 @@ resource "tls_locally_signed_cert" "intermediate_ca_cert_1" {
 
 module "eks_1_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
-  version = "~> 1.20.0"
+  version = "~> 1.21.0"
 
   cluster_name      = module.eks_1.cluster_name
   cluster_endpoint  = module.eks_1.cluster_endpoint
@@ -201,6 +201,16 @@ module "eks_1_addons" {
       name          = "istiod"
       namespace     = kubernetes_namespace_v1.istio_system_1.metadata[0].name
 
+      # This specific setting is unique as it could be run as the other values
+      # shown below because of the quotation marks which need to be retained
+      values = [<<EOT
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            PROXY_CONFIG_XDS_AGENT = "true"
+      EOT
+      ]
+
       set = [
         {
           name  = "meshConfig.accessLogFile"
@@ -221,6 +231,14 @@ module "eks_1_addons" {
         {
           name  = "gateways.istio-ingressgateway.injectionTemplate"
           value = "gateway"
+        },
+        {
+          name  = "env.AUTO_RELOAD_PLUGIN_CERTS"
+          value = "true"
+        },
+        {
+          name  = "env.ISTIO_MULTIROOT_MESH"
+          value = "true"
         }
       ]
     }

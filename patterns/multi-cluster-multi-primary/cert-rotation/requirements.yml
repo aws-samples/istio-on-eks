@@ -1,0 +1,8 @@
+collections:
+  # Install a collection from Ansible Galaxy.
+  - name: kubernetes.core
+    version: ">=5.3.0"
+    source: https://galaxy.ansible.com
+  - name: community.crypto
+    version: ">=2.26.1"
+    source: https://galaxy.ansible.com

@@ -1,0 +1,3 @@
+eks_1_ctx: "arn:aws:eks:us-west-2:XXXXXXXXXXXX:cluster/eks-1"
+eks_2_ctx: "arn:aws:eks:us-west-2:XXXXXXXXXXXX:cluster/eks-2"
+eks_ctx: "arn:aws:eks:us-west-2:XXXXXXXXXXXX:cluster/eks-cluster-1"

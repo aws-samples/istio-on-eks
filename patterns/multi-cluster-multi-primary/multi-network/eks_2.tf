@@ -32,7 +32,7 @@ provider "helm" {
 
 module "vpc_2" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 6.0.1"
+  version = "~> 5.21.0"
 
   name = "${local.eks_2_name}-vpc"
   cidr = local.vpc_2_cidr
@@ -178,7 +178,7 @@ resource "tls_locally_signed_cert" "intermediate_ca_cert_2" {
 
 module "eks_2_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
-  version = "~> 1.21.0"
+  version = "~> 1.16.0"
 
   cluster_name      = module.eks_2.cluster_name
   cluster_endpoint  = module.eks_2.cluster_endpoint
@@ -203,13 +203,18 @@ module "eks_2_addons" {
 
       # This specific setting is unique as it could be run as the other values
       # shown below because of the quotation marks which need to be retained
-      values = [<<EOT
-      meshConfig:
-        defaultConfig:
-          proxyMetadata:
-            PROXY_CONFIG_XDS_AGENT = "true"
-      EOT
+      values = [
+        yamlencode({
+          meshConfig = {
+            defaultConfig = {
+              proxyMetadata = {
+                PROXY_CONFIG_XDS_AGENT = "true"
+              }
+            }
+          }
+        }),
       ]
+
 
       set = [
         {

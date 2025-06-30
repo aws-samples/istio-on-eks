@@ -222,12 +222,16 @@ module "eks_2_addons" {
 
       # This specific setting is unique as it could be run as the other values
       # shown below because of the quotation marks which need to be retained
-      values = [<<EOT
-      meshConfig:
-        defaultConfig:
-          proxyMetadata:
-            PROXY_CONFIG_XDS_AGENT = "true"
-      EOT
+      values = [
+        yamlencode({
+          meshConfig = {
+            defaultConfig = {
+              proxyMetadata = {
+                PROXY_CONFIG_XDS_AGENT = "true"
+              }
+            }
+          }
+        }),
       ]
 
       set = [

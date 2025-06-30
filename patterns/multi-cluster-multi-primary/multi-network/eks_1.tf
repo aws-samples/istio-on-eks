@@ -32,7 +32,7 @@ provider "helm" {
 
 module "vpc_1" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 6.0.1"
+  version = "~> 5.21.0"
 
   name = "${local.eks_1_name}-vpc"
   cidr = local.vpc_cidr
@@ -201,14 +201,16 @@ module "eks_1_addons" {
       name          = "istiod"
       namespace     = kubernetes_namespace_v1.istio_system_1.metadata[0].name
 
-      # This specific setting is unique as it could be run as the other values
-      # shown below because of the quotation marks which need to be retained
-      values = [<<EOT
-      meshConfig:
-        defaultConfig:
-          proxyMetadata:
-            PROXY_CONFIG_XDS_AGENT = "true"
-      EOT
+      values = [
+        yamlencode({
+          meshConfig = {
+            defaultConfig = {
+              proxyMetadata = {
+                PROXY_CONFIG_XDS_AGENT = "true"
+              }
+            }
+          }
+        }),
       ]
 
       set = [

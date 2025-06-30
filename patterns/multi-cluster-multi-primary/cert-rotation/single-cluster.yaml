@@ -1,0 +1,84 @@
+# This playbook would rotate the CA certs on a single EKS cluster
+- name: Istio on EKS CA Cert Rotation
+  hosts: localhost
+  tasks:
+    # --------------------------------------------------------------------------
+    # Capture the cacerts secrets in the istio-system namespace
+    # --------------------------------------------------------------------------
+    - name: Ensure that the cacerts secret in istio-system exists
+      kubernetes.core.k8s:
+        state: present
+        api_version: v1
+        kind: Secret
+        namespace: istio-system
+        name: cacerts
+        context: "{{ eks_ctx }}"
+      register: eks_cacerts_secret
+    - name: Capture the cacerts secret in istio-system exists in EKS 1
+      ansible.builtin.copy:
+        dest: files/eks_cacerts_secret.yaml
+        content: "{{ eks_cacerts_secret.result }}"
+        mode: '0600'
+    # --------------------------------------------------------------------------
+    # Create a new private key and a self-signed cert
+    # --------------------------------------------------------------------------
+    - name: Create private key (RSA, 4096 bits)
+      community.crypto.openssl_privatekey:
+        path: files/root-cert.key
+    - name: Create certificate signing request (CSR) for self-signed certificate
+      community.crypto.openssl_csr_pipe:
+        privatekey_path: files/root-cert.key
+        common_name: istio.io
+      register: csr
+    - name: Create self-signed certificate from CSR
+      community.crypto.x509_certificate:
+        path: files/root-cert.pem
+        csr_content: "{{ csr.csr }}"
+        privatekey_path: files/root-cert.key
+        provider: selfsigned
+    # --------------------------------------------------------------------------
+    # Create a new root certificate by merging existing root cert with newly
+    # created root certificate
+    # --------------------------------------------------------------------------
+    - name: Display the EKS root-cert.pem
+      ansible.builtin.debug:
+        msg: "{{ eks_cacerts_secret.result.data[\"root-cert.pem\"] | b64decode }}"
+        verbosity: 1
+    - name: Capture the EKS root-cert.pem as string
+      ansible.builtin.set_fact:
+        eks_root_cert: "{{ eks_cacerts_secret.result.data[\"root-cert.pem\"] | b64decode }}"
+    - name: Capture the new root-cert.pem as string
+      ansible.builtin.set_fact:
+        new_root_cert: "{{ lookup('file', 'files/root-cert.pem') }}"
+    - name: Create a new certificate by concatenating the above two strings
+      ansible.builtin.copy:
+        dest: files/new-root-cert.pem
+        content: "{{ eks_root_cert + new_root_cert }}"
+        mode: '0400'
+    # --------------------------------------------------------------------------
+    # Replace the cacerts in istio-system namespace
+    # --------------------------------------------------------------------------
+    - name: Ensure that the cacerts secret in istio-system doesn't exist
+      kubernetes.core.k8s:
+        state: absent
+        api_version: v1
+        kind: Secret
+        namespace: istio-system
+        name: cacerts
+        context: "{{ eks_ctx }}"
+    - name: Create the cacerts in istio-system namespace
+      kubernetes.core.k8s:
+        state: present
+        context: "{{ eks_ctx }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: cacerts
+            namespace: istio-system
+          data:
+            ca-cert.pem: "{{ eks_cacerts_secret.result.data[\"ca-cert.pem\"] }}"
+            ca-key.pem: "{{ eks_cacerts_secret.result.data[\"ca-key.pem\"] }}"
+            cert-chain.pem: "{{ eks_cacerts_secret.result.data[\"cert-chain.pem\"] }}"
+            root-cert.pem: "{{ lookup('file', 'files/new-root-cert.pem') | b64encode }}"

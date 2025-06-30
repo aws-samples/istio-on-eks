@@ -19,7 +19,7 @@
       ansible.builtin.copy:
         dest: files/eks_1_cacerts_secret.yaml
         content: "{{ eks_1_cacerts_secret.result }}"
-        mode: '0755'
+        mode: '0600'
     - name: Ensure that the cacerts secret in istio-system exists in EKS 2
       kubernetes.core.k8s:
         state: present
@@ -33,7 +33,7 @@
       ansible.builtin.copy:
         dest: files/eks_2_cacerts_secret.yaml
         content: "{{ eks_2_cacerts_secret.result }}"
-        mode: '0755'
+        mode: '0600'
     # --------------------------------------------------------------------------
     # Create a new private key and a self-signed cert
     # --------------------------------------------------------------------------

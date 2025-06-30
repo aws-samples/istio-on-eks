@@ -178,7 +178,7 @@ resource "tls_locally_signed_cert" "intermediate_ca_cert_2" {
 
 module "eks_2_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
-  version = "~> 1.16.0"
+  version = "~> 1.21.0"
 
   cluster_name      = module.eks_2.cluster_name
   cluster_endpoint  = module.eks_2.cluster_endpoint

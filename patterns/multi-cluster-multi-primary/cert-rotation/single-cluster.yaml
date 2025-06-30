@@ -18,7 +18,7 @@
       ansible.builtin.copy:
         dest: files/eks_cacerts_secret.yaml
         content: "{{ eks_cacerts_secret.result }}"
-        mode: '0755'
+        mode: '0600'
     # --------------------------------------------------------------------------
     # Create a new private key and a self-signed cert
     # --------------------------------------------------------------------------

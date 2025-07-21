@@ -95,7 +95,7 @@ resource "kubectl_manifest" "istio_ca_cert" {
         kind  = "AWSPCAClusterIssuer"
         name  = "root-ca"
       }
-      renewBefore = "162h0m0s" # 6h less than 7d
+      renewBefore = "6h0m0s" # 6h less than 7d
       usages = [
         "server auth",
         "client auth"

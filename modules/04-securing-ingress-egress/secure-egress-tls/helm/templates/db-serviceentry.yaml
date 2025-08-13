@@ -1,0 +1,41 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: awsservices-svc
+  namespace: workshop
+spec:
+  hosts:
+  - sts.amazonaws.com
+  - sts.us-west-2.amazonaws.com
+  location: MESH_EXTERNAL
+  ports:
+  - name: TLS
+    number: 443
+    protocol: HTTPS
+  - name: TCP
+    number: 80
+    protocol: HTTP
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: productcatalog-svc
+  namespace: workshop
+spec:
+  hosts:
+  - {{.Values.dbhostname}}
+  location: MESH_EXTERNAL
+  resolution: DNS
+  ports:
+  - name: dbport-egateway
+    number: 443
+    protocol: TLS
+  - name: dbport-actual
+    number: 3306
+    protocol: TCP
+# endpoint translation for standalone TLS 
+#  endpoints:
+#     - address: {{.Values.dbhostname}}
+#       ports:
+#         dbport: 3306

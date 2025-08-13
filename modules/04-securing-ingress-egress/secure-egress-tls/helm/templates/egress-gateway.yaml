@@ -1,0 +1,147 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-egressgateway
+  namespace: workshop
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  - port:
+      number: 443
+      name: tls
+      protocol: TLS
+    hosts:
+    - sts.amazonaws.com
+    - sts.us-west-2.amazonaws.com
+    tls:
+      #mode: PASSTHROUGH
+      mode: ISTIO_MUTUAL
+  - port:
+      number: 80
+      name: TCP
+      protocol: TCP
+    hosts:
+    - {{.Values.dbhostname}}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: egressgateway-rule
+  namespace: workshop
+spec:
+  host: istio-egressgateway.istio-system.svc.cluster.local
+#  trafficPolicy:
+#    portLevelSettings:
+#    - port:
+#        number: 443
+#      tls:
+#        mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: product-db-vs
+  namespace: workshop
+spec:
+  hosts:
+  - {{.Values.dbhostname}}
+  gateways:
+  - mesh
+  - istio-egressgateway
+  tcp:
+  - match:
+    - gateways:
+      - mesh
+      port: 3306
+      #destinationSubnets:
+      #- 240.240.0.0/16
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - gateways:
+      - istio-egressgateway
+      port: 80
+      #destinationSubnets:
+      #- 240.240.0.0/16
+    route:
+    - destination:
+        host: {{.Values.dbhostname}}
+        port:
+          number: 3306
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: aws-sts-vs-global
+  namespace: workshop
+spec:
+  hosts:
+  - sts.amazonaws.com
+  gateways:
+  - mesh
+  - istio-egressgateway
+  tls:
+  - match:
+    - gateways:
+      - mesh
+      port: 80
+      sniHosts: 
+      - sts.amazonaws.com
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        port:
+          number: 443
+  - match:
+    - gateways:
+      - istio-egressgateway
+      port: 443
+      sniHosts: 
+      - sts.amazonaws.com
+    route:
+    - destination:
+        host: sts.amazonaws.com
+        port:
+          number: 443
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: aws-sts-vs-uswest2
+  namespace: workshop
+spec:
+  hosts:
+  - sts.us-west-2.amazonaws.com
+  gateways:
+  - mesh
+  - istio-egressgateway
+  http:
+  #tls:
+  #- match:
+  #  - gateways:
+  #    - mesh
+  #    port: 80
+  #    sniHosts: 
+  #    - sts.us-west-2.amazonaws.com
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        port:
+          number: 443
+  tls:
+  - match:
+    - gateways:
+      - istio-egressgateway
+      port: 443
+      sniHosts: 
+      - sts.us-west-2.amazonaws.com
+    route:
+    - destination:
+        host: sts.us-west-2.amazonaws.com
+        port:
+          number: 443
+---

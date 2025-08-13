@@ -11,6 +11,6 @@
   "dependencies": {
     "aws-sdk": "^2.657.0",
     "aws-xray-sdk": "^3.5.1",
-    "express": "^4.18.2"
+    "express": "^4.21.0"
   }
 }

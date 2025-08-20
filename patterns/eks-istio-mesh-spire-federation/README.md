@@ -83,7 +83,7 @@ For the Istio installation, we are using the Istio Operator to deploy Istio on t
 `istioctl` needs to be in the PATH
 
 ```bash
-./istio/install-istio.sh <cluster_endpoint_foo> <cluster_endpoint_bar>
+./istio/install-istio.sh
 ```
 
 ### Deploy `helloworld` on both clusters

@@ -382,6 +382,12 @@ resource "helm_release" "keycloak" {
           }
         }
       ]
+      postgresql = {
+        image = {
+          repository = "bitnamilegacy/postgresql"
+          tag        = "17.6.0-debian-12-r4"
+        }
+      }
       logging = {
         output = "default"
         level  = "DEBUG"

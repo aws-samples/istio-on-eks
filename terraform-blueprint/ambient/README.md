@@ -1,11 +1,9 @@
-# Amazon EKS Cluster w/ Istio (`Ambient` mode)
+# Amazon EKS Auto Mode Cluster w/ Istio (`Ambient` mode)
 
-This example demonstrates provisioning an EKS cluster with Istio in `Ambient` mode.
+This example demonstrates provisioning an EKS Auto Mode cluster with Istio in `Ambient` mode.
 
-- Deploy an EKS Cluster with one managed node group in a VPC.
-- Add node_security_group rules for port access required for Istio communication.
+- Deploy an EKS Auto Mode cluster in a VPC. Auto Mode automatically manages compute, networking, and security group configurations.
 - Install Istio in `Ambient` mode using Helm resources in Terraform.
-- Install Istio Ingress Gateway using Helm resources in Terraform. This step deploys a Service of type `LoadBalancer` that creates an AWS Network Load Balancer.
 - Deploy/Validate Istio communication using a sample application.
 
 Refer to the [Istio documentation](https://istio.io/latest/docs/concepts/) for detailed explanations of Istio concepts.
@@ -15,28 +13,40 @@ Refer to the [Istio documentation](https://istio.io/latest/docs/concepts/) for d
 Refer to the [prerequisites](https://aws-ia.github.io/terraform-aws-eks-blueprints/getting-started/#prerequisites) and run the following command to deploy this pattern:
 
 ```sh
+cd terraform-blueprint/ambient
 terraform init
 terraform apply --auto-approve
+aws eks --region us-west-2 update-kubeconfig --name ambient
 ```
 
-Once the resources have been provisioned, you will need to replace the `istio-ingress` pods due to a [`istiod` dependency issue](https://github.com/istio/istio/issues/35789). Use the following command to perform a rolling restart of the `istio-ingress` pods:
 
-```sh
-kubectl rollout restart deployment istio-ingress -n istio-ingress
-```
 
 ### Observability Add-ons
 
-Use the following code snippet to add the Istio Observability Add-ons on the EKS
-cluster with deployed Istio.
+Use the following code snippet to add the Istio Observability Add-ons (Kiali and Prometheus) on the EKS cluster with deployed Istio.
 
 ```sh
-for ADDON in kiali jaeger prometheus grafana
-do
-    ADDON_URL="https://raw.githubusercontent.com/istio/istio/release-1.22/samples/addons/$ADDON.yaml"
-    kubectl apply -f $ADDON_URL
-done
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.28/samples/addons/prometheus.yaml \
+  -f https://raw.githubusercontent.com/istio/istio/release-1.28/samples/addons/kiali.yaml
 ```
+
+### Kubernetes Gateway API CRDs (Optional)
+
+EKS clusters don't include [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) custom resource definitions (CRDs) by default. The Gateway API is an open source standard interface for Kubernetes application networking and represents the next generation of managing ingress and service mesh traffic within a cluster. Istio supports the Kubernetes Gateway API, and you need these resources to allow ingress traffic into your cluster and to manage ambient mesh traffic.
+
+> **Note:** There is a Gateway resource in the Istio APIs, but this walkthrough doesn't use that resource. There are [key differences](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) between the two.
+
+Install the Gateway API CRDs if they are not already present on your cluster:
+
+```sh
+kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
+  kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+```
+
+**Why do you need this?**
+
+- **Gateway**: A Gateway helps route traffic from outside the cluster to services running within it. Each Gateway is associated with a GatewayClass, which indicates the gateway controller (in this case, Istio) that handles the traffic for that Gateway. By default, Istio creates a ServiceAccount, Service, and Deployment that correspond to the Gateway configuration. If you need to adjust the settings of the underlying resources, you can create a ConfigMap and associate it with the Gateway resource.
+- **HTTPRoute**: Route resources define rules for mapping requests through a Gateway to backend Kubernetes services. The HTTPRoute is specifically for the HTTP protocol and routes requests to your application services (e.g., the UI service).
 
 ## Validate
 
@@ -44,35 +54,25 @@ done
 
     ```sh
     kubectl get pods,svc -n istio-system
-    kubectl get pods,svc -n istio-ingress
     ```
 
     ```text
-    NAME                              READY   STATUS    RESTARTS   AGE
-    pod/grafana-657df88ffd-89nxn      1/1     Running   0          16s
-    pod/istio-cni-node-42mjk          1/1     Running   0          22m
-    pod/istio-cni-node-24ctm          1/1     Running   0          22m
-    pod/istiod-6768c599c5-6rwd9       1/1     Running   0          23m
-    pod/jaeger-697d898d6-32gsr        1/1     Running   0          22s
-    pod/kiali-5899548ff7-1xx5h        1/1     Running   0          24s
-    pod/prometheus-777db476b6-3gvg7   2/2     Running   0          18s
-    pod/ztunnel-56s7h                 1/1     Running   0          22m
-    pod/ztunnel-7wbr5                 1/1     Running   0          22m
+    NAMESPACE      NAME                          READY   STATUS    RESTARTS   AGE
+    istio-system   grafana-6c689999f9-5lk9b      1/1     Running   0          37s
+    istio-system   istio-cni-node-28w2s          1/1     Running   0          10m
+    istio-system   istio-cni-node-v4fc8          1/1     Running   0          12m
+    istio-system   istiod-759544898-n84g5        1/1     Running   0          12m
+    istio-system   kiali-95cffb658-8dp42         1/1     Running   0          10m
+    istio-system   prometheus-6bd68c5c99-z6flt   2/2     Running   0          10m
+    istio-system   ztunnel-82xvq                 1/1     Running   0          12m
+    istio-system   ztunnel-csb26                 1/1     Running   0          10m
 
-    NAME                       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                          AGE
-    service/grafana            ClusterIP   172.20.79.2      <none>        3000/TCP                                         16s
-    service/istiod             ClusterIP   172.20.90.17     <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP            23m
-    service/jaeger-collector   ClusterIP   172.20.221.206   <none>        14268/TCP,14250/TCP,9411/TCP,4317/TCP,4318/TCP   21s
-    service/kiali              ClusterIP   172.20.241.225   <none>        20001/TCP,9090/TCP                               24s
-    service/prometheus         ClusterIP   172.20.39.12     <none>        9090/TCP                                         18s
-    service/tracing            ClusterIP   172.20.195.31    <none>        80/TCP,16685/TCP                                 22s
-    service/zipkin             ClusterIP   172.20.92.216    <none>        9411/TCP                                         22s
-    NAME                                READY   STATUS    RESTARTS   AGE
-    pod/istio-ingress-94f46b75b-w5pch   1/1     Running   0          22m
+    NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                 AGE
+    service/grafana      ClusterIP   172.20.210.200   <none>        3000/TCP                                2m14s
+    service/istiod       ClusterIP   172.20.80.137    <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP   14m
+    service/kiali        ClusterIP   172.20.65.49     <none>        20001/TCP,9090/TCP                      12m
+    service/prometheus   ClusterIP   172.20.141.251   <none>        9090/TCP                                12m
 
-    NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP                                                                     PORT(S)                                      AGE
-    service/istio-ingress   LoadBalancer   172.20.249.189   k8s-istioing-istioing-21ba5f8e50-56515edc7fdae5d5.elb.us-west-2.amazonaws.com   15021:32477/TCP,80:32556/TCP,443:32006/TCP   23m
-    ```
 
 2. Verify all the Helm releases installed in the `istio-system` and `istio-ingress` namespaces:
 
@@ -81,21 +81,13 @@ done
     ```
 
     ```text
-    NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART               APP VERSION
-    istio-base      istio-system    1               2024-06-03 15:49:08.443242104 -0700 PDT deployed        base-1.22.0         1.22.0
-    istio-cni       istio-system    1               2024-06-03 15:49:02.186964057 -0700 PDT deployed        cni-1.22.0          1.22.0
-    istiod          istio-system    1               2024-06-03 15:49:07.609140674 -0700 PDT deployed        istiod-1.22.0       1.22.0
-    ztunnel         istio-system    1               2024-06-03 15:49:11.624277009 -0700 PDT deployed        ztunnel-1.22.0      1.22.0
+    NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART             APP VERSION
+    istio-base      istio-system    1               2026-03-19 21:14:27.275765 -0400 EDT    deployed        base-1.28.1       1.28.1
+    istio-cni       istio-system    1               2026-03-19 21:14:19.6922 -0400 EDT      deployed        cni-1.28.1        1.28.1
+    istiod          istio-system    1               2026-03-19 21:14:17.901337 -0400 EDT    deployed        istiod-1.28.1     1.28.1
+    ztunnel         istio-system    1               2026-03-19 21:14:23.912003 -0400 EDT    deployed        ztunnel-1.28.1    1.28.1
     ```
 
-    ```sh
-    helm list -n istio-ingress
-    ```
-
-    ```text
-    NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART               APP VERSION
-    istio-ingress   istio-ingress   1               2024-06-03 15:49:14.784086208 -0700 PDT deployed        gateway-1.22.0      1.22.0
-    ```
 
 ### Observability Add-ons
 
@@ -114,188 +106,199 @@ kubectl port-forward svc/prometheus 9090:9090 -n istio-system
 # Visualize metrics in using Grafana
 kubectl port-forward svc/grafana 3000:3000 -n istio-system
 
-# Visualize application traces via Jaeger
-kubectl port-forward svc/tracing 16686:80 -n istio-system
 ```
 
-### Example
+### Deploy Sample EKS Application
 
-1. Create the `sample` namespace and enable the sidecar injection on it
+To demonstrate Istio's capabilities, deploy the [retail store sample application](https://github.com/aws-containers/retail-store-sample-app). This microservices-based app includes components written in various programming languages with different data stores. By default, the UI service is set to `LoadBalancer`, but you'll update it to `ClusterIP` and let Istio handle traffic into the cluster via the Gateway API. Run the following commands in a second terminal session.
 
-    ```sh
-    kubectl create namespace sample
-    kubectl label namespace sample istio.io/dataplane-mode=ambient
-    ```
+#### Cart
 
-    ```text
-    namespace/sample created
-    namespace/sample labeled
-    ```
+```sh
+helm install cart oci://public.ecr.aws/aws-containers/retail-store-sample-cart-chart --version 1.3.0
+```
 
-2. Deploy `helloworld` app
+#### Catalog
 
-    ```sh
-    cat <<EOF | kubectl apply -n sample -f -
-    apiVersion: v1
-    kind: Service
+```sh
+helm install catalog oci://public.ecr.aws/aws-containers/retail-store-sample-catalog-chart --version 1.3.0
+```
+
+#### Checkout
+
+```sh
+cat > checkout-values.yaml <<EOF
+redis:
+  create: true
+app:
+  persistence:
+    provider: redis
+  endpoints:
+    orders: 'http://orders:80'
+EOF
+```
+
+```sh
+helm install -f checkout-values.yaml checkout oci://public.ecr.aws/aws-containers/retail-store-sample-checkout-chart --version 1.3.0
+```
+
+#### Orders
+
+```sh
+helm install orders oci://public.ecr.aws/aws-containers/retail-store-sample-orders-chart --version 1.3.0
+```
+
+#### UI
+
+```sh
+cat > ui-values.yaml <<EOF
+app:
+  endpoints:
+    carts: http://cart-carts:80
+    catalog: http://catalog:80
+    checkout: http://checkout:80
+    orders: http://orders:80
+EOF
+```
+
+```sh
+helm install -f ui-values.yaml ui oci://public.ecr.aws/aws-containers/retail-store-sample-ui-chart --version 1.3.0
+```
+
+```sh
+kubectl wait --for=condition=Ready --timeout=120s pods --all
+```
+
+#### Expose the Application using Kubernetes Gateway API
+
+Use the Kubernetes Gateway API (installed above) to expose the retail store application and route external traffic into the cluster through Istio. This creates a Gateway with an NLB, scoped to your IP.
+
+```sh
+export USER_IP=$(curl https://checkip.amazonaws.com/)
+
+cat <<EOF | envsubst | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: retail-store-gateway
+  namespace: istio-ingress
+spec:
+  gatewayClassName: istio
+  infrastructure:
+    parametersRef:
+      group: ""
+      kind: ConfigMap
+      name: retail-store-gateway-options
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: retail-store-gateway-options
+  namespace: istio-ingress
+data:
+  service: |
     metadata:
-      name: helloworld
-      labels:
-        app: helloworld
-        service: helloworld
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true
     spec:
-      ports:
-      - port: 5000
-        name: http
-      selector:
-        app: helloworld
-    ---
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: helloworld-v1
-      labels:
-        app: helloworld
-        version: v1
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          app: helloworld
-          version: v1
-      template:
-        metadata:
-          labels:
-            app: helloworld
-            version: v1
-        spec:
-          containers:
-          - name: helloworld
-            image: docker.io/istio/examples-helloworld-v1
-            resources:
-              requests:
-                cpu: "100m"
-            imagePullPolicy: IfNotPresent #Always
-            ports:
-            - containerPort: 5000
-    EOF
-    ```
+      loadBalancerSourceRanges:
+        - ${USER_IP}/32
+EOF
+```
 
-    ```text
-    service/helloworld created
-    deployment.apps/helloworld-v1 created
-    ```
+> **Note:** Security - Since this NLB is internet-facing, `loadBalancerSourceRanges` restricts the NLB's security group to only allow inbound traffic from your public IP (`${USER_IP}/32`). Without this, the NLB would be open to `0.0.0.0/0`. You can verify this in the AWS Console under **EC2 → Load Balancers → Security → Inbound rules**, where `loadBalancerSourceRanges` gets translated into a security group inbound rule scoped to your IP, below is the reference.
 
-3. Deploy `sleep` app that we will use to connect to `helloworld` app
+![loadBalancerSourceRanges Security Group](../../images/loadBalancerSourceRanges.png)
 
-    ```sh
-    cat <<EOF | kubectl apply -n sample -f -
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: sleep
-    ---
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: sleep
-      labels:
-        app: sleep
-        service: sleep
-    spec:
-      ports:
-      - port: 80
-        name: http
-      selector:
-        app: sleep
-    ---
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: sleep
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          app: sleep
-      template:
-        metadata:
-          labels:
-            app: sleep
-        spec:
-          terminationGracePeriodSeconds: 0
-          serviceAccountName: sleep
-          containers:
-          - name: sleep
-            image: curlimages/curl
-            command: ["/bin/sleep", "infinity"]
-            imagePullPolicy: IfNotPresent
-            volumeMounts:
-            - mountPath: /etc/sleep/tls
-              name: secret-volume
-          volumes:
-          - name: secret-volume
-            secret:
-              secretName: sleep-secret
-              optional: true
-    EOF
-    ```
 
-    ```text
-    serviceaccount/sleep created
-    service/sleep created
-    deployment.apps/sleep created
-    ```
+#### HTTPRoute to expose the UI service
+```sh
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: retail-store-httproute
+  namespace: default
+spec:
+  parentRefs:
+    - name: retail-store-gateway
+      namespace: istio-ingress
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ui
+          port: 80
+EOF
+```
 
-4. Check all the pods in the `sample` namespace
+Wait for the load balancer to finish provisioning, then verify the application is reachable:
 
-    ```sh
-    kubectl get pods -n sample
-    ```
-    
-    ```text
-    NAME                             READY   STATUS    RESTARTS   AGE
-    helloworld-v1-64674bb6c8-5szqq   1/1     Running   0          26s
-    sleep-5577c64d7c-htrf8           1/1     Running   0          10s
-    ```
+```sh
+curl --head -X GET --retry 30 --retry-all-errors --retry-delay 15 --connect-timeout 30 --max-time 60 \
+  -k $(kubectl get gateway retail-store-gateway -n istio-ingress -ojsonpath='{.status.addresses[0].value}')
+```
 
-5. Connect to `helloworld` app from `sleep` app and verify if the connection uses envoy proxy
+#### Response
+```sh
+HTTP/1.1 200 OK
+content-type: text/html
+content-language: en-US
+set-cookie: SESSIONID=e3bf2d47-6604-40ba-93e6-8e3efb5d115f
+content-length: 19973
+x-envoy-upstream-service-time: 636
+date: Tue, 24 Mar 2026 23:51:35 GMT
+server: istio-envoy
 
-    ```sh
-    kubectl exec -n sample -c sleep \
-        "$(kubectl get pod -n sample -l \
-        app=sleep -o jsonpath='{.items[0].metadata.name}')" \
-        -- curl -sv helloworld.sample:5000/hello
-    ```
+Time: 0h:00m:04s
+```
 
-    ```text
-    * Host helloworld.sample:5000 was resolved.
-    ...
-    * Connection #0 to host helloworld.sample left intact
-    Hello version: v1, instance: helloworld-v1-64674bb6c8-43qfx
-    ```
+
+#### Add Workloads to the Ambient Mesh
+
+To verify that workloads in the default namespace are included in the ambient mesh, label the namespace:
+
+```sh
+kubectl label namespace default istio.io/dataplane-mode=ambient
+```
+
+Run the following commands to get the URL to access the example retail store application:
+
+```sh
+export NLB_HOST=$(kubectl get gateway retail-store-gateway -n istio-ingress -ojsonpath='{.status.addresses[0].value}')
+echo http://$NLB_HOST
+```
 
 ## Destroy
 
-The AWS Load Balancer Controller add-on asynchronously reconciles resource deletions.
-During stack destruction, the istio ingress resource and the load balancer controller
-add-on are deleted in quick succession, preventing the removal of some of the AWS
-resources associated with the ingress gateway load balancer like, the frontend and the
-backend security groups.
-This causes the final `terraform destroy -auto-approve` command to timeout and fail with VPC dependency errors like below:
-
-```text
-│ Error: deleting EC2 VPC (vpc-XXXX): operation error EC2: DeleteVpc, https response error StatusCode: 400, RequestID: XXXXX-XXXX-XXXX-XXXX-XXXXXX, api error DependencyViolation: The vpc 'vpc-XXXX' has dependencies and cannot be deleted.
-```
-
-A possible workaround is to manually uninstall the `istio-ingress` helm chart.
+Clean up the sample application resources before destroying the infrastructure:
 
 ```sh
-terraform destroy -target='module.eks_blueprints_addons.helm_release.this["istio-ingress"]' -auto-approve
+kubectl delete HTTPRoute retail-store-httproute
+kubectl delete Gateway retail-store-gateway -n istio-ingress
+kubectl delete cm retail-store-gateway-options -n istio-ingress
+
+helm uninstall ui
+helm uninstall orders
+helm uninstall checkout
+helm uninstall catalog
+helm uninstall cart
+
+rm checkout-values.yaml
+rm ui-values.yaml
 ```
 
-Once the chart is uninstalled move on to destroy the stack.
-
-{%
-   include-markdown "../../docs/_partials/destroy.md"
-%}
+```sh
+terraform destroy --auto-approve
+```

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalog
+  namespace: workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productcatalog
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: productcatalog
+        version: v1
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        proxy.istio.io/config: |
+          proxyMetadata:
+            ISTIO_META_DNS_CAPTURE: "true"
+            ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+    spec:
+      serviceAccountName: productcatalog-sa
+      containers:
+        - name: productcatalog
+          image: "public.ecr.aws/m9m4d6q2/product_catalog:ssl"          
+          imagePullPolicy: Always
+          env:
+          - name: AGG_APP_URL
+            value: "http://catalogdetail.workshop.svc.cluster.local:3000/catalogDetail"
+          - name: DATABASE_SERVICE_URL
+            value: aurora-cluster-demo.cluster-cmtzkynrxzd2.us-west-2.rds.amazonaws.com
+          - name: DATABASE_USER_NAME
+            value: product_catalog_app
+          - name: DB_NAME
+            value: product_catalog
+          - name: DB_PORT
+            value: "3306"
+          livenessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            successThreshold: 3
+          ports:
+            - containerPort: 5000

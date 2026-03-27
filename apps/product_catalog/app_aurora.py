@@ -27,7 +27,7 @@ DB_APP_URL = os.environ.get("DATABASE_SERVICE_URL")
 DB_USER_NAME = os.environ.get("DATABASE_USER_NAME")
 #DB_TOKEN = os.environ.get("DATABASE_TOKEN")
 DB_NAME = os.environ.get("DB_NAME")
-DB_PORT = os.environ.get("DB_PORT")
+DB_PORT = int(os.environ.get("DB_PORT"))
 DB_REGION = os.environ.get("DB_REGION")
 
 list_of_names = ""
@@ -45,7 +45,8 @@ flask_app.logger.info('DB_REGION is ' + str(DB_REGION))
 
 os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
 
-SSL_CA='rds-combined-ca-bundle.pem'
+#SSL_CA='rds-combined-ca-bundle.pem'
+SSL_CA='global-bundle.pem'
 
 flask_app.logger.info(SSL_CA)
 
@@ -55,13 +56,13 @@ client = boto3.client('rds')
 # Connect to the database
 def create_connection():
     # Construct SSL
-    ssl = {'ca': 'rds-combined-ca-bundle.pem'}
+    ssl = {'ca': SSL_CA}
     token = client.generate_db_auth_token(DBHostname=DB_APP_URL, Port=3306, DBUsername=DB_USER_NAME, Region=DB_REGION)
-    flask_app.logger.info('token ' + token)
+    flask_app.logger.info('token ' + token + ' DB ' + DB_NAME + ' Port ' + str(DB_PORT))
     return pymysql.connect(host=DB_APP_URL,
                              user=DB_USER_NAME,
                              password=token,
-                             port=3306,
+                             port=DB_PORT,
                              db=DB_NAME,
                              ssl=ssl,
                              charset='utf8mb4',

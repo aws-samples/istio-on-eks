@@ -23,7 +23,7 @@ Istio on EKS and working with the most commonly observed service-mesh use cases.
 
 ## Patterns
 
-#### [Multi-Primary, Multi-Network](patterns/multi-cluster-multinetwork-multiprimary/README.md)
+#### [Multi-Primary, Multi-Network](patterns/multi-cluster-multi-primary/README.md)
 #### [Spiffe/Spire Federation between EKS clusters](patterns/eks-istio-mesh-spire-federation/README.md)
 
 ## Terraform Modules

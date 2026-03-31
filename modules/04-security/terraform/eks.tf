@@ -3,7 +3,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name                   = var.name
-  cluster_version                = "1.29"
+  cluster_version                = "1.33"
   cluster_endpoint_public_access = true
 
   # Give the Terraform identity admin access to the cluster

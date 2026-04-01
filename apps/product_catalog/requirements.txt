@@ -5,6 +5,6 @@ werkzeug==3.0.3
 gunicorn==22.0.0
 requests==v2.24.0
 aws-xray-sdk==2.6.0
-flask-cors==4.0.1
+flask-cors==5.0.0
 PyMySQL==1.1.1
 boto3==1.9.220
